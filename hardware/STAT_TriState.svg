@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="780" height="560" viewBox="0 0 780 560" font-family="Helvetica, Arial, sans-serif" font-size="13">
+  <rect width="780" height="560" fill="#ffffff"/>
+  <text x="20" y="28" font-size="17" font-weight="bold">MCP73831 STAT → ESP32 ADC1 — reading all three states</text>
+  <text x="20" y="48" fill="#555">R1 = R2 hold the node at mid-scale when STAT is high-impedance; Rs limits the 5 V "high" level to a safe voltage</text>
+
+  <g stroke="#000" stroke-width="1.6" fill="none">
+    <!-- MCP73831 -->
+    <rect x="40" y="160" width="160" height="140"/>
+    <!-- VDD up to +5V -->
+    <line x1="120" y1="160" x2="120" y2="105"/>
+    <line x1="100" y1="105" x2="140" y2="105"/>
+    <!-- VSS down to GND -->
+    <line x1="120" y1="300" x2="120" y2="400"/>
+    <!-- STAT to Rs -->
+    <line x1="200" y1="230" x2="250" y2="230"/>
+    <rect x="250" y="220" width="80" height="20"/>
+    <line x1="330" y1="230" x2="420" y2="230"/>
+    <!-- R1 up to +3V3 -->
+    <line x1="420" y1="230" x2="420" y2="175"/>
+    <rect x="410" y="115" width="20" height="60"/>
+    <line x1="420" y1="115" x2="420" y2="85"/>
+    <line x1="400" y1="85" x2="440" y2="85"/>
+    <!-- R2 down to GND -->
+    <line x1="420" y1="230" x2="420" y2="285"/>
+    <rect x="410" y="285" width="20" height="60"/>
+    <line x1="420" y1="345" x2="420" y2="400"/>
+    <!-- node to C and ESP32 -->
+    <line x1="420" y1="230" x2="620" y2="230"/>
+    <line x1="520" y1="230" x2="520" y2="300"/>
+    <line x1="500" y1="300" x2="540" y2="300" stroke-width="2.4"/>
+    <line x1="500" y1="310" x2="540" y2="310" stroke-width="2.4"/>
+    <line x1="520" y1="310" x2="520" y2="400"/>
+    <!-- ESP32 -->
+    <rect x="620" y="180" width="130" height="110"/>
+    <!-- GND symbols -->
+    <g>
+      <line x1="104" y1="400" x2="136" y2="400"/><line x1="110" y1="406" x2="130" y2="406"/><line x1="116" y1="412" x2="124" y2="412"/>
+      <line x1="404" y1="400" x2="436" y2="400"/><line x1="410" y1="406" x2="430" y2="406"/><line x1="416" y1="412" x2="424" y2="412"/>
+      <line x1="504" y1="400" x2="536" y2="400"/><line x1="510" y1="406" x2="530" y2="406"/><line x1="516" y1="412" x2="524" y2="412"/>
+    </g>
+  </g>
+  <circle cx="420" cy="230" r="4" fill="#000"/>
+  <circle cx="520" cy="230" r="4" fill="#000"/>
+
+  <!-- labels -->
+  <text x="120" y="215" text-anchor="middle" font-weight="bold">MCP73831</text>
+  <text x="120" y="233" text-anchor="middle" fill="#555">charger</text>
+  <text x="128" y="178">VDD</text>
+  <text x="128" y="294">VSS</text>
+  <text x="194" y="226" text-anchor="end">STAT</text>
+  <text x="120" y="95" text-anchor="middle">+5 V (USB VBUS)</text>
+  <text x="290" y="212" text-anchor="middle" font-weight="bold">Rs 75 kΩ</text>
+  <text x="420" y="75" text-anchor="middle">+3V3</text>
+  <text x="440" y="142" font-weight="bold">R1 100 kΩ</text>
+  <text x="400" y="320" text-anchor="end" font-weight="bold">R2 100 kΩ</text>
+  <text x="548" y="310" font-weight="bold">C 100 nF</text>
+  <text x="408" y="250" text-anchor="end" fill="#555">node</text>
+  <text x="685" y="205" text-anchor="middle" font-weight="bold">ESP32</text>
+  <text x="628" y="235">GPIO 32–39</text>
+  <text x="628" y="252" fill="#555">(ADC1)</text>
+
+  <!-- levels -->
+  <g font-size="13">
+    <text x="20" y="450" font-weight="bold">Node voltage (R1 = R2 = 100 kΩ → 1.65 V / 50 kΩ Thevenin; Rs = 75 kΩ)</text>
+    <text x="20" y="474">STAT low — charging</text><text x="330" y="474">0.99 V</text>
+    <text x="20" y="494">STAT high-Z — no input power, or no battery</text><text x="330" y="494">1.65 V</text>
+    <text x="20" y="514">STAT high — charge complete (≈ VDD, 5.0–5.25 V)</text><text x="330" y="514">2.99–3.09 V</text>
+    <text x="440" y="474" fill="#555">Thresholds with analogReadMilliVolts():</text>
+    <text x="440" y="494" fill="#555">&lt; 1300 mV → charging</text>
+    <text x="440" y="514" fill="#555">1300–2300 mV → high-Z,  &gt; 2300 mV → complete</text>
+    <text x="20" y="544" fill="#555">Without Rs the "complete" state would put the USB 5 V straight onto the ESP32 pin (absolute maximum 3.6 V).</text>
+  </g>
+</svg>

@@ -1,0 +1,20 @@
+// BoardSelect.h - the console this build is for. Set exactly one to 1.
+//
+// This file is not tracked by git, so switching consoles never shows up as a change.
+// After cloning the repository, copy BoardSelect.h.template to BoardSelect.h.
+#pragma once
+
+#define BOARD_IS_LITTLEGAMECONSOLE()    1
+#define BOARD_IS_TINTINROCKETSHOOTER()  0
+
+#if BOARD_IS_LITTLEGAMECONSOLE() + BOARD_IS_TINTINROCKETSHOOTER() != 1
+#error "BoardSelect.h: select exactly one board"
+#endif
+
+// ---- Build options
+
+// Where the sound clips come from:
+//   1 - WAV files on LittleFS (partition "littlefs"), loaded into PSRAM at startup. Smaller
+//       firmware; needs PSRAM and the WAV files uploaded once (see README).
+//   0 - linked into the firmware from sounds/*.h. Works without PSRAM and without upload.
+#define SOUNDS_FROM_LITTLEFS()          1

@@ -1,0 +1,29 @@
+# Reference material and working files that are not part of the published project
+do_not_publish/
+
+# Local board selection - copy software/VectorArcade/BoardSelect.h.template to BoardSelect.h
+software/VectorArcade/BoardSelect.h
+
+# macOS
+.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+
+# Arduino IDE / arduino-cli build output
+build/
+*.elf
+*.bin
+*.map
+*.hex
+
+# PlatformIO, if it is ever added
+.pio/
+.pioenvs/
+.piolibdeps/
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*~
