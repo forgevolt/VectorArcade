@@ -23,11 +23,18 @@ class Joystick2Axis
     // Initialize and start processing
     void begin();
 
+    // Which axes' calibration data setCalibrationData() accepted
+    struct CalibrationResult
+    {
+      bool x;
+      bool y;
+    };
+
     // Calibration information that is taken into account when computing the current value 
     // of an axis (getter methods). An axis whose data leaves no usable travel on both sides
     // of the center falls back to the full ADC range.
-    void setCalibrationData(int minX, int maxX, int centerX,
-                            int minY, int maxY, int centerY);
+    CalibrationResult setCalibrationData(int minX, int maxX, int centerX,
+                                         int minY, int maxY, int centerY);
 
     // Reads both axes once and advances the four direction state machines from that reading.
     // Everything below reports it until the next call, so each axis costs one (averaged) ADC
@@ -77,8 +84,8 @@ class Joystick2Axis
     uint16_t readRaw(int pin, bool inv) const;
 
     // Stores one axis's calibration if both halves of the travel clear the dead zone with
-    // room left over, otherwise the full-range defaults
-    void setAxisCalibration(int& min, int& max, int& center,
+    // room left over, otherwise the full-range defaults. Returns true if the data was accepted.
+    bool setAxisCalibration(int& min, int& max, int& center,
                             int newMin, int newMax, int newCenter, const char* axis);
 
     // Advances the state machine of one direction. 'value' must be signed so that a positive

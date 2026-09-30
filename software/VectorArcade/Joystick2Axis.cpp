@@ -81,11 +81,12 @@ void Joystick2Axis::begin()
 }
 
 // ----------------------------------------------------------------------------------------
-void Joystick2Axis::setCalibrationData(int minX, int maxX, int centerX,
-                                       int minY, int maxY, int centerY)
+Joystick2Axis::CalibrationResult Joystick2Axis::setCalibrationData(int minX, int maxX, int centerX,
+                                                                   int minY, int maxY, int centerY)
 {
-  setAxisCalibration(myMinX, myMaxX, myCenterX, minX, maxX, centerX, "X");
-  setAxisCalibration(myMinY, myMaxY, myCenterY, minY, maxY, centerY, "Y");
+  CalibrationResult result;
+  result.x = setAxisCalibration(myMinX, myMaxX, myCenterX, minX, maxX, centerX, "X");
+  result.y = setAxisCalibration(myMinY, myMaxY, myCenterY, minY, maxY, centerY, "Y");
 
   // Store calibration data in NVS. The members rather than the parameters, so a rejected
   // axis stores the defaults it fell back to.
@@ -101,10 +102,12 @@ void Joystick2Axis::setCalibrationData(int minX, int maxX, int centerX,
   p.putInt("centerY", myCenterY);
 
   p.end();
+
+  return result;
 }
 
 // ----------------------------------------------------------------------------------------
-void Joystick2Axis::setAxisCalibration(int& min, int& max, int& center,
+bool Joystick2Axis::setAxisCalibration(int& min, int& max, int& center,
                                        int newMin, int newMax, int newCenter, const char* axis)
 {
   // Both halves of the travel have to clear the dead zone with room left over. Below that
@@ -116,7 +119,7 @@ void Joystick2Axis::setAxisCalibration(int& min, int& max, int& center,
     min    = newMin;
     max    = newMax;
     center = newCenter;
-    return;
+    return true;
   }
 
   min    = cADC_MIN;
@@ -126,6 +129,7 @@ void Joystick2Axis::setAxisCalibration(int& min, int& max, int& center,
   Serial << "Joystick: axis " << axis << ": min " << newMin << " max " << newMax
          << " center " << newCenter << " leaves no usable travel - using the full ADC range"
          << endl;
+  return false;
 }
 
 // ----------------------------------------------------------------------------------------

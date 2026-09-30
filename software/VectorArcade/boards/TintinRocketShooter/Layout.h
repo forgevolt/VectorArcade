@@ -20,16 +20,25 @@ namespace Layout
   constexpr int  cBatteryTerminalHalfHeight = 5;
   constexpr bool cBatteryDoubleOutline      = true;
 
+  // ---- Joystick calibration: position field, axis sliders, text column and progress bar
+  constexpr int cJoyCalFieldPosX  = 34;     // Square field showing the joystick position
+  constexpr int cJoyCalFieldPosY  = 72;
+  constexpr int cJoyCalFieldSize  = 100;
+  constexpr int cJoyCalTextPosX   = 146;    // Instructions, right of the field
+  constexpr int cJoyCalTextPosY   = 76;
+  constexpr bool cJoyCalLargeText = false;  // Instructions in FONT_std_22 (true) or FONT_std_18
+  constexpr int cJoyCalProgressY  = 220;    // Center line of the progress bar
+
   // ---- Lunar Lander
   constexpr float cLunarZoom        = 1.3f; // Chosen for legibility on the small panel
-  constexpr float cLunarMaxWorldY   = 247;   // Lowest point (world coordinates)
-  constexpr float cLunarStartEagleY = 122;   // Eagle on the select screens
+  constexpr float cLunarMaxWorldY   = 247;  // Lowest point (world coordinates)
+  constexpr float cLunarStartEagleY = 122;  // Eagle on the select screens
   constexpr int   cLunarStatsLeft   = 7;    // Game statistics columns
   constexpr int   cLunarStatsRight  = 135;
 
   // ---- Asteroids
-  constexpr int cSaucerSegmentWidth = 40;  // Saucer keeps its direction for this many pixels (x)
-  constexpr int cSaucerNumSegments  = 7;   // cSaucerNumSegments*cSaucerSegmentWidth must exceed the screen width
-  constexpr int cShipShotRange      = 150; // Pixels a shot travels before it disappears
+  constexpr int cSaucerSegmentWidth = 40;   // Saucer keeps its direction for this many pixels (x)
+  constexpr int cSaucerNumSegments  = 7;    // cSaucerNumSegments*cSaucerSegmentWidth must exceed the screen width
+  constexpr int cShipShotRange      = 150;  // Pixels a shot travels before it disappears
   constexpr int cSaucerShotRange    = 110;
 }
