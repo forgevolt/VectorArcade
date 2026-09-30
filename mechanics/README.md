@@ -70,3 +70,14 @@ These are Bambu Studio projects: a full copy of the mesh plus the slicer state, 
 specific to one printer and one filament, and the larger ones run to tens of megabytes. They
 are here as a reference for anyone with the same machine. On any other printer, the STLs
 plus the tables above carry the same information in a form your own slicer can use.
+
+**This folder still needs a cleanup.** It holds the projects as they were used, and not all
+of them are consistent yet:
+
+- `TinTinRocket-Lower-H2D-PLA-GF.3mf` is currently an exact copy of the ABS-GF project, so
+  it prints in ABS-GF too. A PLA-GF project for the lower body is still to come.
+- The TintinRocketShooter's body is covered twice, by the `TinTinRocket-*` projects for the
+  H2D and the `RocketShooter*` / `RocketTop` projects for the X1 Carbon.
+- Some file names contain spaces, and the names do not follow one pattern.
+
+Until then, check part, printer and filament in Bambu Studio before printing.
