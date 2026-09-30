@@ -47,7 +47,8 @@ The schematic is the authority for what was actually built.
 
 - **The battery connector sits too close to the display** and cannot be fitted. The
   battery's wires are soldered directly to the board instead.
-- **The ESP32 reset button sits too close to the display**, which keeps it pressed.
+- **The ESP32 reset button sits too close to the display**, which would keep it pressed. It
+  is not fitted.
 - **The joystick is exposed to electrostatic discharge without its cap.** Touching the bare
   joystick can discharge into the board, and the firmware then hangs. Always fit the cap
   (`JoyTopCover` in [`mechanics/`](../mechanics)). A revision should add ESD protection to
