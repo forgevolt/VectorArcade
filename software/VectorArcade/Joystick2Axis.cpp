@@ -42,10 +42,12 @@ int scaleAxis(int value, int minValue, int centerValue, int maxValue)
   value = (value > maxValue) ? maxValue : value;
   value = (value < minValue) ? minValue : value;
 
-  if (value > centerValue)
-    return mapf(value, centerValue + cDeadzone, maxValue, 0, Joystick2Axis::cMAX);
-  else
-    return mapf(value, minValue, centerValue - cDeadzone, Joystick2Axis::cMIN, 0);
+  const float mapped = (value > centerValue)
+                     ? mapf(value, centerValue + cDeadzone, maxValue, 0, Joystick2Axis::cMAX)
+                     : mapf(value, minValue, centerValue - cDeadzone, Joystick2Axis::cMIN, 0);
+
+  // The getters promise [cMIN, cMAX] for any calibration data
+  return constrain(int(mapped), Joystick2Axis::cMIN, Joystick2Axis::cMAX);
 }
 
 } // namespace
@@ -59,17 +61,21 @@ Joystick2Axis::Joystick2Axis(int pinX, int pinY, bool invX, bool invY)
 // ----------------------------------------------------------------------------------------
 void Joystick2Axis::begin()
 {
-  // Read calibration data from NVS or use default values
+  // Read calibration data from NVS, or keep the defaults. Opened read-only: a console that
+  // has never been calibrated has no "Joystick" namespace, and a read-write open would create
+  // an empty one. getInt() then returns the defaults passed below.
   Preferences p;
-  p.begin("Joystick");
- 
-  myMinX    = p.getInt("minX",    cADC_MIN);
-  myMaxX    = p.getInt("maxX",    cADC_MAX);
-  myCenterX = p.getInt("centerX", cADC_MAX/2);
+  p.begin("Joystick", true);
 
-  myMinY    = p.getInt("minY",    cADC_MIN);
-  myMaxY    = p.getInt("maxY",    cADC_MAX);
-  myCenterY = p.getInt("centerY", cADC_MAX/2);
+  setAxisCalibration(myMinX, myMaxX, myCenterX,
+                     p.getInt("minX",    cADC_MIN),
+                     p.getInt("maxX",    cADC_MAX),
+                     p.getInt("centerX", cADC_MAX/2), "X");
+
+  setAxisCalibration(myMinY, myMaxY, myCenterY,
+                     p.getInt("minY",    cADC_MIN),
+                     p.getInt("maxY",    cADC_MAX),
+                     p.getInt("centerY", cADC_MAX/2), "Y");
 
   p.end();
 }
@@ -78,10 +84,11 @@ void Joystick2Axis::begin()
 void Joystick2Axis::setCalibrationData(int minX, int maxX, int centerX,
                                        int minY, int maxY, int centerY)
 {
-  myMinX = minX; myMaxX = maxX; myCenterX = centerX;
-  myMinY = minY; myMaxY = maxY; myCenterY = centerY;
+  setAxisCalibration(myMinX, myMaxX, myCenterX, minX, maxX, centerX, "X");
+  setAxisCalibration(myMinY, myMaxY, myCenterY, minY, maxY, centerY, "Y");
 
-  // Store calibration data in NVS
+  // Store calibration data in NVS. The members rather than the parameters, so a rejected
+  // axis stores the defaults it fell back to.
   Preferences p;
   p.begin("Joystick");
  
@@ -97,178 +104,84 @@ void Joystick2Axis::setCalibrationData(int minX, int maxX, int centerX,
 }
 
 // ----------------------------------------------------------------------------------------
+void Joystick2Axis::setAxisCalibration(int& min, int& max, int& center,
+                                       int newMin, int newMax, int newCenter, const char* axis)
+{
+  // Both halves of the travel have to clear the dead zone with room left over. Below that
+  // the mapping divides by a span that is zero or negative, and the axis is stuck at full
+  // deflection rather than merely inaccurate. An axis that was not moved during the min/max
+  // calibration arrives here with all three values equal.
+  if (newMin + 2*cDeadzone < newCenter && newCenter + 2*cDeadzone < newMax)
+  {
+    min    = newMin;
+    max    = newMax;
+    center = newCenter;
+    return;
+  }
+
+  min    = cADC_MIN;
+  max    = cADC_MAX;
+  center = cADC_MAX/2;
+
+  Serial << "Joystick: axis " << axis << ": min " << newMin << " max " << newMax
+         << " center " << newCenter << " leaves no usable travel - using the full ADC range"
+         << endl;
+}
+
+// ----------------------------------------------------------------------------------------
 void Joystick2Axis::update()
 {
   myX = scaleAxis(getRawX(), myMinX, myCenterX, myMaxX);
   myY = scaleAxis(getRawY(), myMinY, myCenterY, myMaxY);
+
+  // All four run on every update: the state machine keeps timestamps, so a direction that
+  // was skipped could fire an immediate auto-repeat when it is evaluated next.
+  myIsUp    = updateDirectionState( myY, myUpState);
+  myIsDown  = updateDirectionState(-myY, myDownState);
+  myIsRight = updateDirectionState( myX, myRightState);
+  myIsLeft  = updateDirectionState(-myX, myLeftState);
 }
 
 // ----------------------------------------------------------------------------------------
-uint16_t Joystick2Axis::getRawX()
+uint16_t Joystick2Axis::readRaw(int pin, bool inv) const
 {
-  uint16_t value = readADC(myPinX);
-  return ((myInvX == true) ? cADC_MAX - value : value);
+  uint16_t value = readADC(pin);
+  return ((inv == true) ? cADC_MAX - value : value);
 }
 
 // ----------------------------------------------------------------------------------------
-uint16_t Joystick2Axis::getRawY()
+bool Joystick2Axis::updateDirectionState(int value, DirectionState& state)
 {
-  uint16_t value = readADC(myPinY);
-  return ((myInvY == true) ? cADC_MAX - value : value);
-}
-
-// ----------------------------------------------------------------------------------------
-bool Joystick2Axis::isUp()
-{
-  int y = getY();
-
   // Below threshold -> direction "key" is not active
-  if (y < cDirOffThreshold)
+  if (value < cDirOffThreshold)
   {
-    myIsUpActive = false;
-    myIsUpRepeatActive = false;
+    state.myIsActive = false;
+    state.myIsRepeatActive = false;
     return false;
   }
 
   // State change from inactive to active? -> direction "key" is active?
-  if (myIsUpActive == false && y > cDirOnThreshold)
+  if (state.myIsActive == false && value > cDirOnThreshold)
   {
-    myIsUpActive = true;
-    myTimeUpActive = millis();
+    state.myIsActive = true;
+    state.myTimeActive = millis();
     return true;
   }
 
   // State change from active to start auto repeat?
-  if (myIsUpActive == true && myIsUpRepeatActive == false && millis()-myTimeUpActive > cAutoRepeatDelay)
+  if (state.myIsActive == true && state.myIsRepeatActive == false && millis()-state.myTimeActive > cAutoRepeatDelay)
   {
-    myIsUpRepeatActive = true;
-    myTimeUpRepeatTriggered = millis();
+    state.myIsRepeatActive = true;
+    state.myTimeRepeatTriggered = millis();
     return true;
   }
 
   // Auto repeat already active, trigger another direction "key"?
-  if (myIsUpActive == true && myIsUpRepeatActive == true && millis()-myTimeUpRepeatTriggered > cRepeatInterval)
+  if (state.myIsActive == true && state.myIsRepeatActive == true && millis()-state.myTimeRepeatTriggered > cRepeatInterval)
   {
-    myTimeUpRepeatTriggered = millis();
+    state.myTimeRepeatTriggered = millis();
     return true;
   }
 
   return false;
 }
-
-// ----------------------------------------------------------------------------------------
-bool Joystick2Axis::isDown()
-{
-  int y = getY();
-
-  // Below threshold -> direction "key" is not active
-  if (y > -cDirOffThreshold)
-  {
-    myIsDownActive = false;
-    myIsDownRepeatActive = false;
-    return false;
-  }
-
-  // State change from inactive to active? -> direction "key" is active?
-  if (myIsDownActive == false && y < -cDirOnThreshold)
-  {
-    myIsDownActive = true;
-    myTimeDownActive = millis();
-    return true;
-  }
-
-  // State change from active to start auto repeat?
-  if (myIsDownActive == true && myIsDownRepeatActive == false && millis()-myTimeDownActive > cAutoRepeatDelay)
-  {
-    myIsDownRepeatActive = true;
-    myTimeDownRepeatTriggered = millis();
-    return true;
-  }
-
-  // Auto repeat already active, trigger another direction "key"?
-  if (myIsDownActive == true && myIsDownRepeatActive == true && millis()-myTimeDownRepeatTriggered > cRepeatInterval)
-  {
-    myTimeDownRepeatTriggered = millis();
-    return true;
-  }
-
-  return false;
-}
-
-// ----------------------------------------------------------------------------------------
-bool Joystick2Axis::isRight()
-{
-  int x = getX();
-
-  // Below threshold -> direction "key" is not active
-  if (x < cDirOffThreshold)
-  {
-    myIsRightActive = false;
-    myIsRightRepeatActive = false;
-    return false;
-  }
-
-  // State change from inactive to active? -> direction "key" is active?
-  if (myIsRightActive == false && x > cDirOnThreshold)
-  {
-    myIsRightActive = true;
-    myTimeRightActive = millis();
-    return true;
-  }
-
-  // State change from active to start auto repeat?
-  if (myIsRightActive == true && myIsRightRepeatActive == false && millis()-myTimeRightActive > cAutoRepeatDelay)
-  {
-    myIsRightRepeatActive = true;
-    myTimeRightRepeatTriggered = millis();
-    return true;
-  }
-
-  // Auto repeat already active, trigger another direction "key"?
-  if (myIsRightActive == true && myIsRightRepeatActive == true && millis()-myTimeRightRepeatTriggered > cRepeatInterval)
-  {
-    myTimeRightRepeatTriggered = millis();
-    return true;
-  }
-
-  return false;}
-
-// ----------------------------------------------------------------------------------------
-bool Joystick2Axis::isLeft()
-{
-  int x = getX();
-
-  // Below threshold -> direction "key" is not active
-  if (x > -cDirOffThreshold)
-  {
-    myIsLeftActive = false;
-    myIsLeftRepeatActive = false;
-    return false;
-  }
-
-  // State change from inactive to active? -> direction "key" is active?
-  if (myIsLeftActive == false && x < -cDirOnThreshold)
-  {
-    myIsLeftActive = true;
-    myTimeLeftActive = millis();
-    return true;
-  }
-
-  // State change from active to start auto repeat?
-  if (myIsLeftActive == true && myIsLeftRepeatActive == false && millis()-myTimeLeftActive > cAutoRepeatDelay)
-  {
-    myIsLeftRepeatActive = true;
-    myTimeLeftRepeatTriggered = millis();
-    return true;
-  }
-
-  // Auto repeat already active, trigger another direction "key"?
-  if (myIsLeftActive == true && myIsLeftRepeatActive == true && millis()-myTimeLeftRepeatTriggered > cRepeatInterval)
-  {
-    myTimeLeftRepeatTriggered = millis();
-    return true;
-  }
-
-  return false;
-}
-

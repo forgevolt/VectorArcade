@@ -24,58 +24,64 @@ class Joystick2Axis
     void begin();
 
     // Calibration information that is taken into account when computing the current value 
-    // of an axis (getter methods).
+    // of an axis (getter methods). An axis whose data leaves no usable travel on both sides
+    // of the center falls back to the full ADC range.
     void setCalibrationData(int minX, int maxX, int centerX,
                             int minY, int maxY, int centerY);
 
-    // Read both axes once. getX/getY and isUp/isDown/isRight/isLeft evaluate the values of
-    // the last update(), so each axis costs one (averaged) ADC read per update.
+    // Reads both axes once and advances the four direction state machines from that reading.
+    // Everything below reports it until the next call, so each axis costs one (averaged) ADC
+    // read per update.
     void update();
 
-    // Get the current value of one of the axes. Range is [-1000, 1000]. Number 0 indicates 
-    // the center position. This is also the default that is returned, if an invalid pin 
-    // number is provided with the ctor.
+    // The value of the last update(). Range is [-1000, 1000], 0 at the center.
     int getX() const { return myX; }
     int getY() const { return myY; }
  
     // Get the raw values i.e. for calibration purposes. These read the ADC on every call.
-    uint16_t getRawX();
-    uint16_t getRawY();
+    uint16_t getRawX() const { return readRaw(myPinX, myInvX); }
+    uint16_t getRawY() const { return readRaw(myPinY, myInvY); }
 
-    // Check if joystick is pressed in one of the four directions. Returns true if direction is active.
-    bool isUp();
-		bool isDown();
-		bool isRight();
-		bool isLeft();
+    // Direction "keys" as of the last update(): true on the edge into a direction and again
+    // on each auto-repeat.
+    bool isUp()    const { return myIsUp;    }
+    bool isDown()  const { return myIsDown;  }
+    bool isRight() const { return myIsRight; }
+    bool isLeft()  const { return myIsLeft;  }
 
   private:
     int myPinX, myPinY;
     bool myInvX, myInvY;
-    int myMinX, myMaxX, myCenterX;
-    int myMinY, myMaxY, myCenterY;
-    int myX = 0, myY = 0; // Values of the last update()
 
-    // "Up" direction
-    bool myIsUpActive = false;
-    bool myIsUpRepeatActive = false;
-    unsigned long myTimeUpActive;
-    unsigned long myTimeUpRepeatTriggered;
+    // Calibration, overwritten by begin() and setCalibrationData(). The defaults describe an
+    // uncalibrated joystick spanning the full ADC range.
+    int myMinX = cADC_MIN, myMaxX = cADC_MAX, myCenterX = cADC_MAX/2;
+    int myMinY = cADC_MIN, myMaxY = cADC_MAX, myCenterY = cADC_MAX/2;
 
-    // "Down" direction
-    bool myIsDownActive = false;
-    bool myIsDownRepeatActive = false;
-    unsigned long myTimeDownActive;
-    unsigned long myTimeDownRepeatTriggered;
+    // Values and direction flags of the last update()
+    int  myX = 0, myY = 0;
+    bool myIsUp = false, myIsDown = false, myIsRight = false, myIsLeft = false;
 
-    // "Right" direction
-    bool myIsRightActive = false;
-    bool myIsRightRepeatActive = false;
-    unsigned long myTimeRightActive;
-    unsigned long myTimeRightRepeatTriggered;
+    // State of one direction "key": on/off thresholds and auto-repeat
+    struct DirectionState
+    {
+      bool myIsActive = false;
+      bool myIsRepeatActive = false;
+      unsigned long myTimeActive = 0;
+      unsigned long myTimeRepeatTriggered = 0;
+    };
 
-    // "Left" direction
-    bool myIsLeftActive = false;
-    bool myIsLeftRepeatActive = false;
-    unsigned long myTimeLeftActive;
-    unsigned long myTimeLeftRepeatTriggered;
+    DirectionState myUpState, myDownState, myRightState, myLeftState;
+
+    // Averaged ADC reading of one axis, inverted if requested
+    uint16_t readRaw(int pin, bool inv) const;
+
+    // Stores one axis's calibration if both halves of the travel clear the dead zone with
+    // room left over, otherwise the full-range defaults
+    void setAxisCalibration(int& min, int& max, int& center,
+                            int newMin, int newMax, int newCenter, const char* axis);
+
+    // Advances the state machine of one direction. 'value' must be signed so that a positive
+    // value means "this direction is currently active": down and left pass the negated value.
+    static bool updateDirectionState(int value, DirectionState& state);
 };

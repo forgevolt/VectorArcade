@@ -85,10 +85,13 @@ void JoystickCalibration::step(unsigned long dt)
   // Min/max calibration: Process current values
   else if (myMinMaxCalibrationIsActive == true && millis()-myCalibrationStartTime <= cCenterTotalDuration+cMinMaxDuration)
   {
-    myMinX = min(myMinX, (int)myJoy.getRawX());
-    myMaxX = max(myMaxX, (int)myJoy.getRawX());
-    myMinY = min(myMinY, (int)myJoy.getRawY());
-    myMaxY = max(myMaxY, (int)myJoy.getRawY());
+    const int x = myJoy.getRawX();
+    const int y = myJoy.getRawY();
+
+    myMinX = min(myMinX, x);
+    myMaxX = max(myMaxX, x);
+    myMinY = min(myMinY, y);
+    myMaxY = max(myMaxY, y);
   }
 
   // End of the min/max calibration?
