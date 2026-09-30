@@ -1,2 +1,9 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# GitHub language statistics: the headers are C++, not C
+*.h linguist-language=C++
+
+# Generated data, not code: excluded from the language statistics and collapsed in diffs
+software/VectorArcade/sounds/*.h linguist-generated
+software/VectorArcade/boards/*/AsteroidsSplash.h linguist-generated
