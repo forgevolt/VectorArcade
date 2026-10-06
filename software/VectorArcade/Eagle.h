@@ -2,7 +2,8 @@
 
 #include <vector>
 #include "DisplayObject.h"
-#include "MathUtilities.h"
+#include <VectorUtilities.h>
+using namespace vectorutilities;
 #include "Camera.h"
 #include <SoundEngine.h>
 #include "LunarLanderSounds.h"

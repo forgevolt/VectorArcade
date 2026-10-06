@@ -19,7 +19,6 @@
 | `SoundClips.*` | loads the clips from LittleFS and checks their fingerprint |
 | `JoystickCalibration.*`, `IMUCalibration.*`, `SoundVolume.*`, `WipeAndReset.*`, `FPSToggle.*` | the configuration entries |
 | `BatteryStatus.*`, `IMUStatus.*` | the battery indicator and the IMU readout in the menu |
-| `MathUtilities.*` | 2D and 3D vector maths |
 | `Version.h` | the firmware version |
 | `BoardSelect.h.template` | the console to build for, and the sound source (see below) |
 | `Board.h`, `PinMap.h`, `Layout.h`, `AsteroidsSplash.h` | forward to the selected console's files in `boards/` |

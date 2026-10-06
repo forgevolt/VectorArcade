@@ -2,7 +2,8 @@
 #include <Streaming.h>
 #include "JoystickCalibration.h"
 #include "Layout.h"
-#include "MathUtilities.h"
+#include <VectorUtilities.h>
+using namespace vectorutilities;
 
 
 // ---- JoystickCalibration ---------------------------------------------------------------

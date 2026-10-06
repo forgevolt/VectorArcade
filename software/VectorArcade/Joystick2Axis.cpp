@@ -1,7 +1,8 @@
 #include <Preferences.h>
 #include <Streaming.h>
 #include "Joystick2Axis.h"
-#include "MathUtilities.h"
+#include <VectorUtilities.h>
+using namespace vectorutilities;
 
 // ---- Joystick2Axis ---------------------------------------------------------------------
 

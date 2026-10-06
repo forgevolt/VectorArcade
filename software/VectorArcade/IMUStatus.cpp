@@ -2,7 +2,8 @@
 #if BOARD_HAS_IMU()
 
 #include "IMUStatus.h"
-#include "MathUtilities.h"
+#include <VectorUtilities.h>
+using namespace vectorutilities;
 
 // ---- IMUStatus -------------------------------------------------------------------------
 

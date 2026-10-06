@@ -1,5 +1,6 @@
 #pragma once
-#include "MathUtilities.h"
+#include <VectorUtilities.h>
+using namespace vectorutilities;
 
 // ---- Camera ----------------------------------------------------------------------------
 // This code implements a simple camera that transforms world coordinates into screen 

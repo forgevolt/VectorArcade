@@ -8,7 +8,8 @@
   #include "sounds/Explosion.h"
 #endif
 
-#include "MathUtilities.h"
+#include <VectorUtilities.h>
+using namespace vectorutilities;
 #include <Streaming.h>
 
 // ---- LunarLanderSounds -----------------------------------------------------------------
