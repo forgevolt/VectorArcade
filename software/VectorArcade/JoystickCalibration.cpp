@@ -12,9 +12,18 @@ using namespace joystickutilities;
 namespace
 {
 
-// Center calibration lasts 6 seconds (3 seconds wait, 3 seconds measurements)
-const unsigned long cCenterWaitDuration  = 3000; // wait time until the center measurements begin
-const unsigned long cCenterTotalDuration = 6000; 
+// Center calibration: a sprung stick rests at a slightly different spot depending on the
+// direction it was released from, so the center is averaged over one release per direction
+// (up, right, down, left). A is accepted once the stick has been pushed past half-way in that
+// direction - the threshold of the menu's direction keys - and the rest position is then
+// measured once the console has settled from the button press.
+const int cNumReleases = 4;
+const int cPushThreshold = DirectionConfig().onThreshold;
+const unsigned long cCenterSettleDuration = 200;
+const unsigned long cCenterSampleDuration = 1000;
+
+const RGB888 cPushedCol(0, 200, 0);    // Arrow and tick once the stick was pushed
+const RGB888 cDimCol(90, 90, 90);      // "press A" while A is not accepted yet
 
 // Total of 10 seconds to move both axes to their min/max positions
 const unsigned long cMinMaxDuration = 10000;
@@ -42,6 +51,15 @@ int axisPos(int raw, int center, int len)
     return mapf(raw, 0, center, 0, len/2);
 
   return mapf(raw, center, cAdcMax, len/2, len);
+}
+
+// ----------------------------------------------------------------------------------------
+// True if the stick (joystick values, y up) is pushed past half-way in the direction of
+// release 'direction' (0 up, 1 right, 2 down, 3 left)
+bool isPushed(int direction, int x, int y)
+{
+  const int along[cNumReleases] = { y, x, -y, -x };
+  return along[direction] > cPushThreshold;
 }
 
 } // namespace
@@ -76,22 +94,43 @@ void JoystickCalibration::step(unsigned long dt)
     return;
   }
 
-  // Has the wait time to start the center measurements already expired?
-  if (myCenterCalibrationWaitPeriod == true && millis()-myCalibrationStartTime > cCenterWaitDuration)
+  // Center calibration: waiting for the stick to be pushed, released and A to be pressed;
+  // B cancels without changing the stored calibration
+  if (myCenterCalibrationIsActive == true && mySamplingIsActive == false)
   {
-    myCenterCalibrationWaitPeriod = false;
-    myCenterCalibrationIsActive  = true;
+    if (isPushed(myRelease, s.x, s.y) == true)
+      myPushed = true;
+
+    if (s.b == true)
+    {
+      myCenterCalibrationIsActive = false;
+      setState(eNotActive);
+    }
+    else if (s.a == true && myPushed == true)
+    {
+      mySamplingIsActive  = true;
+      mySamplingStartTime = millis();
+    }
+  }
+
+  // Center calibration: measure the rest position of this release, after the settle time
+  else if (myCenterCalibrationIsActive == true && millis()-mySamplingStartTime <= cCenterSettleDuration+cCenterSampleDuration)
+  {
+    if (millis()-mySamplingStartTime > cCenterSettleDuration)
+      myCenter.add(myJoy);
+  }
+
+  // Release measured -> next release
+  else if (myCenterCalibrationIsActive == true && myRelease < cNumReleases-1)
+  {
+    mySamplingIsActive = false;
+    myPushed           = false;
+    myRelease++;
     sound().play(sound().signal());
   }
 
-  // Center calibration active? Yes -> process center calibration values
-  else if (myCenterCalibrationIsActive == true && millis()-myCalibrationStartTime <= cCenterTotalDuration)
-  {
-    myCenter.add(myJoy);
-  }
-
-  // End the center calibration? -> start with min/max calibration
-  else if (myCenterCalibrationIsActive == true && millis()-myCalibrationStartTime > cCenterTotalDuration)
+  // All releases measured -> start with min/max calibration
+  else if (myCenterCalibrationIsActive == true)
   {
     // Unlikely, but better safe than sorry: without samples there is no center
     if (myCenter.count() == 0)
@@ -105,26 +144,28 @@ void JoystickCalibration::step(unsigned long dt)
     myRange = RangeTracker<2>(myCenter.center());
 
     myCenterCalibrationIsActive = false;
+    mySamplingIsActive          = false;
     myMinMaxCalibrationIsActive = true;
     myStopCalibration           = false;
+    myCalibrationStartTime      = millis();
     sound().play(sound().signal());
   }
 
   // User has pressed a button while min/max calibration is active -> abort
-  else if (myMinMaxCalibrationIsActive == true && myStopCalibration == true && millis()-myCalibrationStartTime <= cCenterTotalDuration+cMinMaxDuration)
+  else if (myMinMaxCalibrationIsActive == true && myStopCalibration == true && millis()-myCalibrationStartTime <= cMinMaxDuration)
   {
     myStopCalibration = false;
     myCalibrationStartTime += 2*cMinMaxDuration;
   }
 
   // Min/max calibration: Process current values
-  else if (myMinMaxCalibrationIsActive == true && millis()-myCalibrationStartTime <= cCenterTotalDuration+cMinMaxDuration)
+  else if (myMinMaxCalibrationIsActive == true && millis()-myCalibrationStartTime <= cMinMaxDuration)
   {
     myRange.add(myJoy);
   }
 
   // End of the min/max calibration?
-  else if (myMinMaxCalibrationIsActive == true && millis()-myCalibrationStartTime > cCenterTotalDuration+cMinMaxDuration)
+  else if (myMinMaxCalibrationIsActive == true && millis()-myCalibrationStartTime > cMinMaxDuration)
   {
     myMinMaxCalibrationIsActive = false;
     myResult = myJoy.setCalibration(myRange.calibration());
@@ -162,8 +203,7 @@ void JoystickCalibration::draw()
   canvas().setPenColor(cDefaultCol);
   canvas().selectFont(&fabgl::FONT_std_24);
 
-  bool isCenterPhase = (myCenterCalibrationWaitPeriod == true || myCenterCalibrationIsActive == true);
-  drawCenteredText(30, isCenterPhase ? "Center Calibration" : "Min/Max Calibration");
+  drawCenteredText(30, myCenterCalibrationIsActive ? "Center Calibration" : "Min/Max Calibration");
   canvas().setPenColor(cDefaultCol);
   canvas().drawLine(0, 60, canvas().getWidth(), 60);
 
@@ -171,20 +211,33 @@ void JoystickCalibration::draw()
   int rawX = myJoy.readRaw(0);
   int rawY = myJoy.readRaw(1);
 
-  if (isCenterPhase == true)
+  if (myCenterCalibrationIsActive == true)
   {
-    if (myCenterCalibrationWaitPeriod == true)
+    float released = myRelease;
+
+    if (mySamplingIsActive == false)
     {
-      drawCenteredText(80, "Calibration starts in ...");
-      String seconds(int(max((float(myCalibrationStartTime)+cCenterWaitDuration-millis())/1000, 0.0f)));
-      drawCenteredText(110, seconds);
+      drawCenteredText(66, "Push the stick,");
+      drawArrow(myRelease, myPushed);
+
+      canvas().setPenColor(myPushed ? cDefaultCol : cDimCol);
+      drawCenteredText(164, "let it go, press A.");
+      canvas().setPenColor(cDefaultCol);
     }
-    else 
+    else
     {
-      drawCenteredText(80, "Don't move the joystick!");
+      drawCenteredText(66, "Don't move the joystick!");
+      released += float(millis()-mySamplingStartTime) / (cCenterSettleDuration+cCenterSampleDuration);
     }
 
-    drawProgressBar(160, float(millis()-myCalibrationStartTime) / cCenterTotalDuration);
+    drawProgressBar(203, released / cNumReleases);
+
+    // Counter bottom left, "B cancels." bottom right
+    canvas().selectFont(&fabgl::FONT_std_16);
+    canvas().setPenColor(cDefaultCol);
+    canvas().drawText(30, 220, (String(myRelease+1) + " / " + String(cNumReleases)).c_str());
+    if (mySamplingIsActive == false)
+      canvas().drawText(canvas().getWidth() - 30 - canvas().textExtent("B cancels."), 220, "B cancels.");
   }
   else if (myMinMaxCalibrationIsActive == true)
   {
@@ -195,7 +248,7 @@ void JoystickCalibration::draw()
     const char* const lines[] = { "Move the", "joystick to", "all edges.", "", "A button", "exits." };
     drawTextLines(lines, 6);
 
-    drawProgressBar(Layout::cJoyCalProgressY, float(millis()-myCalibrationStartTime-cCenterTotalDuration) / cMinMaxDuration);
+    drawProgressBar(Layout::cJoyCalProgressY, float(millis()-myCalibrationStartTime) / cMinMaxDuration);
   } 
   else if (myResultIsActive == true)
   {
@@ -323,16 +376,62 @@ void JoystickCalibration::drawTextLines(const char* const lines[], int numLines)
 }
 
 // ----------------------------------------------------------------------------------------
+void JoystickCalibration::drawArrow(int direction, bool pushed)
+{
+  const int cx = canvas().getWidth()/2;
+  const int cy = 126;
+
+  // Pointing up, relative to the center: shaft and head, 64 pixels long
+  const int shape[7][2] = { {-8, 32}, {-8, -4}, {-20, -4}, {0, -32}, {20, -4}, {8, -4}, {8, 32} };
+
+  // Turned by 90 degrees clockwise per direction
+  Point p[7];
+  for (int i=0; i<7; i++)
+  {
+    int x = shape[i][0];
+    int y = shape[i][1];
+    for (int r=0; r<direction; r++)
+    {
+      const int t = x;
+      x = -y;
+      y = t;
+    }
+    p[i] = Point(cx + x, cy + y);
+  }
+
+  if (pushed == true)
+  {
+    canvas().setBrushColor(cPushedCol);
+    canvas().fillPath(p, 7);
+
+    // Tick right of the arrow
+    canvas().setPenColor(cPushedCol);
+    canvas().setPenWidth(2);
+    canvas().drawLine(cx + 48, cy,     cx + 56, cy + 9);
+    canvas().drawLine(cx + 56, cy + 9, cx + 72, cy - 12);
+  }
+  else
+  {
+    canvas().setPenColor(cDefaultCol);
+    canvas().drawPath(p, 7);
+  }
+
+  canvas().setPenWidth(1);
+  canvas().setPenColor(cDefaultCol);
+}
+
+// ----------------------------------------------------------------------------------------
 void JoystickCalibration::start()
 {
   myCenter.reset();
   
-  myCenterCalibrationWaitPeriod = true;
-  myCenterCalibrationIsActive   = false;
+  myCenterCalibrationIsActive   = true;
+  myRelease                     = 0;
+  myPushed                      = false;
+  mySamplingIsActive            = false;
   myMinMaxCalibrationIsActive   = false;
   myStopCalibration             = false;
   myResultIsActive              = false;
-  myCalibrationStartTime        = millis();
 
   setState(eActive);
 }

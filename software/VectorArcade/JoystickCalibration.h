@@ -23,8 +23,11 @@ class JoystickCalibration : public MenuItem
     joystickutilities::Joystick<2>& myJoy;
     
     unsigned long myCalibrationStartTime;
-    bool myCenterCalibrationWaitPeriod;    // true: waiting to ensure that joystick is in idle position
-    bool myCenterCalibrationIsActive;      // true: center measurement is active
+    bool myCenterCalibrationIsActive;      // true: center calibration (the releases) is active
+    int  myRelease;                        // Center calibration: current release, 0 .. cNumReleases-1
+    bool myPushed;                         // true: the stick went past half-way in the direction of this release
+    bool mySamplingIsActive;               // true: A was pressed, the rest position of this release is measured
+    unsigned long mySamplingStartTime;
     bool myMinMaxCalibrationIsActive;      // true: min/max measurement is active
     bool myStopCalibration;                // true: user has pressed a button during min/max calibration -> stop
     bool myResultIsActive;                 // true: showing that an axis was not accepted
@@ -47,4 +50,8 @@ class JoystickCalibration : public MenuItem
 
     // Lines of text in the column right of the field
     void drawTextLines(const char* const lines[], int numLines);
+
+    // Arrow in the middle of the screen pointing in the direction of release 'direction'
+    // (0 up, 1 right, 2 down, 3 left): outlined, or filled green with a tick once 'pushed'
+    void drawArrow(int direction, bool pushed);
 };
