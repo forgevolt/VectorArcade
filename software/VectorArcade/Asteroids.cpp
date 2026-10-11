@@ -509,13 +509,13 @@ void Asteroids::stepRunning(unsigned long dt)
   // ---- Rotate ship
 
   // Expo curve: blend of linear and cubic response for fine control around the center
-  float n = constrain(abs(myInput.x) / (float)Joystick2Axis::cMAX, 0.0f, 1.0f);
+  float n = constrain(abs(myInput.x) / (float)joystickutilities::cMAX, 0.0f, 1.0f);
   float angle = cMaxRotation * ((1.0f - cRotationExpo) * n + cRotationExpo * n * n * n);
   if (myInput.x < 0) angle *= -1;
   myShip.changeAngle(angle);
 
   // Linear mapping
-  // myShip.changeAngle(mapf(myInput.x, Joystick2Axis::cMIN, Joystick2Axis::cMAX, -10, 10));
+  // myShip.changeAngle(mapf(myInput.x, joystickutilities::cMIN, joystickutilities::cMAX, -10, 10));
 
   // ---- Apply Thrust
 
@@ -569,7 +569,7 @@ void Asteroids::stepLevelCleared(unsigned long dt)
 
   // ---- Rotating the ship and applying thrust is possible while waiting for the new level
 
-  myShip.changeAngle(mapf(myInput.x, Joystick2Axis::cMIN, Joystick2Axis::cMAX, -10, 10));
+  myShip.changeAngle(mapf(myInput.x, joystickutilities::cMIN, joystickutilities::cMAX, -10, 10));
   myShip.thrust(myInput.bIsPressed);
 
   for (auto& s : myShots) s->step(dt);

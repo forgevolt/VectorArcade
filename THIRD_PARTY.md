@@ -10,6 +10,7 @@ through the Arduino library manager or comes with the esp32 core, and keeps its 
 | FabGL | GPL-3.0 | the display driver, the canvas and the fonts |
 | SoundEngine | MIT | I2S mixing and playback |
 | VectorUtilities | MIT (raymath: zlib) | 2D vectors and the maths helpers of both games |
+| JoystickUtilities | MIT | reading, calibrating and storing the joystick |
 | Bounce2 | MIT | button debouncing |
 | Streaming | LGPL-2.1-or-later | the `Serial <<` logging |
 | Adafruit MAX1704X | BSD | the battery fuel gauge |
@@ -17,9 +18,11 @@ through the Arduino library manager or comes with the esp32 core, and keeps its 
 | MPU6050_light | MIT | the IMU of the TintinRocketShooter |
 | esp32 core 2.0.17 | LGPL-2.1 (Arduino core), Apache-2.0 (ESP-IDF) | the platform, including LittleFS, Wire, SPI and Preferences |
 
-SoundEngine and VectorUtilities are written for this project and published separately, under
-the same MIT licence as this repository: [SoundEngine](https://github.com/forgevolt/SoundEngine)
-and [VectorUtilities](https://github.com/forgevolt/VectorUtilities). VectorUtilities' vector
+SoundEngine, VectorUtilities and JoystickUtilities are written for this project and published
+separately, under the same MIT licence as this repository:
+[SoundEngine](https://github.com/forgevolt/SoundEngine),
+[VectorUtilities](https://github.com/forgevolt/VectorUtilities) and
+[JoystickUtilities](https://github.com/forgevolt/JoystickUtilities). VectorUtilities' vector
 code is derived from raymath, part of [raylib](https://github.com/raysan5/raylib) (zlib
 licence); the library carries raylib's licence notice.
 

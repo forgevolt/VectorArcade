@@ -1,7 +1,7 @@
 #pragma once
 
 #include "MenuItem.h"
-#include "Joystick2Axis.h"
+#include <JoystickUtilities.h>
 
 // ---- JoystickCalibration ---------------------------------------------------------------
 // Center and min/max calibration for a 2-axis joystick. 
@@ -20,7 +20,7 @@ class JoystickCalibration : public MenuItem
     void start() override;
 
   private:
-    Joystick2Axis& myJoy;
+    joystickutilities::Joystick<2>& myJoy;
     
     unsigned long myCalibrationStartTime;
     bool myCenterCalibrationWaitPeriod;    // true: waiting to ensure that joystick is in idle position
@@ -29,13 +29,10 @@ class JoystickCalibration : public MenuItem
     bool myStopCalibration;                // true: user has pressed a button during min/max calibration -> stop
     bool myResultIsActive;                 // true: showing that an axis was not accepted
     unsigned long myResultStartTime;
-    Joystick2Axis::CalibrationResult myResult;
+    joystickutilities::CalibrationResult<2> myResult;
     
-    int myCount;                           // Number of samples of the center calibration
-    long mySumX, mySumY;                   // Sum of all measurements for the center calibration
-    int myCenterX, myCenterY;              // Center calibration values
-    int myMinX, myMinY;                    // Min values measured
-    int myMaxX, myMaxY;                    // Max values measured
+    joystickutilities::CenterSampler<2> myCenter;  // Center calibration: averaged resting position
+    joystickutilities::RangeTracker<2>  myRange;   // Min/max calibration: center and travel of each axis
 
     // Square field: range covered so far and current position
     void drawField(int rawX, int rawY);

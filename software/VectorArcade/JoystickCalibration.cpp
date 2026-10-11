@@ -4,6 +4,7 @@
 #include "Layout.h"
 #include <VectorUtilities.h>
 using namespace vectorutilities;
+using namespace joystickutilities;
 
 
 // ---- JoystickCalibration ---------------------------------------------------------------
@@ -28,16 +29,19 @@ const int cSliderInset = 3;    // Gap between a slider's frame and its blue bar,
 const int cDotSize     = 9;    // Diameter of the current-position dot
 const int cSliderDot   = 7;    // Diameter of the dot on a slider
 
+// Highest raw value of an axis (12-bit ADC, the joystick's AnalogConfig)
+const int cAdcMax = AnalogConfig().adcMax;
+
 // ----------------------------------------------------------------------------------------
 // Position of a raw ADC value on an axis that is 'len' pixels long, with the calibrated
-// center in the middle: [cADC_MIN, center] fills the first half, [center, cADC_MAX] the
-// second, so the middle always marks the center and each half shows its own travel.
+// center in the middle: [0, center] fills the first half, [center, cAdcMax] the second,
+// so the middle always marks the center and each half shows its own travel.
 int axisPos(int raw, int center, int len)
 {
   if (raw <= center)
-    return mapf(raw, Joystick2Axis::cADC_MIN, center, 0, len/2);
+    return mapf(raw, 0, center, 0, len/2);
 
-  return mapf(raw, center, Joystick2Axis::cADC_MAX, len/2, len);
+  return mapf(raw, center, cAdcMax, len/2, len);
 }
 
 } // namespace
@@ -45,7 +49,8 @@ int axisPos(int raw, int center, int len)
 // ----------------------------------------------------------------------------------------
 JoystickCalibration::JoystickCalibration(Menu& menu)
 : MenuItem(menu, "Joystick Calibration"),
-  myJoy(menu.input().joy())
+  myJoy(menu.input().joy()),
+  myRange(std::array<int, 2>{})
 {}
 
 // ----------------------------------------------------------------------------------------
@@ -82,28 +87,22 @@ void JoystickCalibration::step(unsigned long dt)
   // Center calibration active? Yes -> process center calibration values
   else if (myCenterCalibrationIsActive == true && millis()-myCalibrationStartTime <= cCenterTotalDuration)
   {
-    myCount++;
-    mySumX += myJoy.getRawX();
-    mySumY += myJoy.getRawY();
+    myCenter.add(myJoy);
   }
 
   // End the center calibration? -> start with min/max calibration
   else if (myCenterCalibrationIsActive == true && millis()-myCalibrationStartTime > cCenterTotalDuration)
   {
-    // Unlikely, but better safe than sorry (division by zero)
-    if (myCount == 0)
+    // Unlikely, but better safe than sorry: without samples there is no center
+    if (myCenter.count() == 0)
     {
       myCenterCalibrationIsActive = false;
       setState(eNotActive);
-      Serial << __PRETTY_FUNCTION__  << " myCount == 0 " << endl;
+      Serial << __PRETTY_FUNCTION__  << " no center samples " << endl;
       return;
     }
 
-    myCenterX = mySumX / myCount;
-    myCenterY = mySumY / myCount;
-
-    myMinX = myMaxX = myCenterX;
-    myMinY = myMaxY = myCenterY;
+    myRange = RangeTracker<2>(myCenter.center());
 
     myCenterCalibrationIsActive = false;
     myMinMaxCalibrationIsActive = true;
@@ -121,22 +120,19 @@ void JoystickCalibration::step(unsigned long dt)
   // Min/max calibration: Process current values
   else if (myMinMaxCalibrationIsActive == true && millis()-myCalibrationStartTime <= cCenterTotalDuration+cMinMaxDuration)
   {
-    const int x = myJoy.getRawX();
-    const int y = myJoy.getRawY();
-
-    myMinX = min(myMinX, x);
-    myMaxX = max(myMaxX, x);
-    myMinY = min(myMinY, y);
-    myMaxY = max(myMaxY, y);
+    myRange.add(myJoy);
   }
 
   // End of the min/max calibration?
   else if (myMinMaxCalibrationIsActive == true && millis()-myCalibrationStartTime > cCenterTotalDuration+cMinMaxDuration)
   {
     myMinMaxCalibrationIsActive = false;
-    myResult = myJoy.setCalibrationData(myMinX, myMaxX, myCenterX, myMinY, myMaxY, myCenterY);
+    myResult = myJoy.setCalibration(myRange.calibration());
 
-    if (myResult.x == true && myResult.y == true)
+    // Stored as applied: a rejected axis stores the full range it fell back to
+    saveCalibration(myJoy, cJoystickNameSpace);
+
+    if (myResult.allAccepted())
     {
       setState(eNotActive);
     }
@@ -172,8 +168,8 @@ void JoystickCalibration::draw()
   canvas().drawLine(0, 60, canvas().getWidth(), 60);
 
   // One reading per frame for the dots
-  int rawX = myJoy.getRawX();
-  int rawY = myJoy.getRawY();
+  int rawX = myJoy.readRaw(0);
+  int rawY = myJoy.readRaw(1);
 
   if (isCenterPhase == true)
   {
@@ -207,9 +203,9 @@ void JoystickCalibration::draw()
     drawSliderX(rawX);
     drawSliderY(rawY);
 
-    const char* axes = (myResult.x == false && myResult.y == false) ? "X and Y axes:"
-                     : (myResult.x == false)                        ? "X axis:"
-                     :                                                "Y axis:";
+    const char* axes = (myResult.accepted[0] == false && myResult.accepted[1] == false) ? "X and Y axes:"
+                     : (myResult.accepted[0] == false)                                  ? "X axis:"
+                     :                                                                    "Y axis:";
     const char* const lines[] = { axes, "not moved.", "Full range", "stored." };
     drawTextLines(lines, 4);
   }
@@ -223,9 +219,10 @@ void JoystickCalibration::drawField(int rawX, int rawY)
   const int n  = Layout::cJoyCalFieldSize;
 
   // Range covered so far; y grows upwards on the joystick and downwards on the screen
+  const RangeTracker<2>& r = myRange;
   canvas().setBrushColor(0, 0, 140);
-  canvas().fillRectangle(x0 + axisPos(myMinX, myCenterX, n), y0 + n - axisPos(myMaxY, myCenterY, n),
-                         x0 + axisPos(myMaxX, myCenterX, n), y0 + n - axisPos(myMinY, myCenterY, n));
+  canvas().fillRectangle(x0 + axisPos(r.min(0), r.center(0), n), y0 + n - axisPos(r.max(1), r.center(1), n),
+                         x0 + axisPos(r.max(0), r.center(0), n), y0 + n - axisPos(r.min(1), r.center(1), n));
 
   // Frame and center cross
   canvas().setPenWidth(1);
@@ -236,7 +233,7 @@ void JoystickCalibration::drawField(int rawX, int rawY)
 
   // Current position
   canvas().setBrushColor(Color::BrightWhite);
-  canvas().fillEllipse(x0 + axisPos(rawX, myCenterX, n), y0 + n - axisPos(rawY, myCenterY, n), cDotSize, cDotSize);
+  canvas().fillEllipse(x0 + axisPos(rawX, r.center(0), n), y0 + n - axisPos(rawY, r.center(1), n), cDotSize, cDotSize);
 }
 
 // ----------------------------------------------------------------------------------------
@@ -251,8 +248,8 @@ void JoystickCalibration::drawSliderX(int raw)
   const int m  = n - 2*cSliderInset;
 
   canvas().setBrushColor(0, 0, 255);
-  canvas().fillRectangle(x1 + axisPos(myMinX, myCenterX, m), y0 + cSliderInset,
-                         x1 + axisPos(myMaxX, myCenterX, m), y0 + cSliderWidth - cSliderInset);
+  canvas().fillRectangle(x1 + axisPos(myRange.min(0), myRange.center(0), m), y0 + cSliderInset,
+                         x1 + axisPos(myRange.max(0), myRange.center(0), m), y0 + cSliderWidth - cSliderInset);
 
   canvas().setPenWidth(1);
   canvas().setPenColor(cDefaultCol);
@@ -260,7 +257,7 @@ void JoystickCalibration::drawSliderX(int raw)
   canvas().drawLine(x0 + n/2, y0, x0 + n/2, y0 + cSliderWidth);
 
   canvas().setBrushColor(Color::BrightWhite);
-  canvas().fillEllipse(x1 + axisPos(raw, myCenterX, m), y0 + cSliderWidth/2, cSliderDot, cSliderDot);
+  canvas().fillEllipse(x1 + axisPos(raw, myRange.center(0), m), y0 + cSliderWidth/2, cSliderDot, cSliderDot);
 }
 
 // ----------------------------------------------------------------------------------------
@@ -275,8 +272,8 @@ void JoystickCalibration::drawSliderY(int raw)
   const int m  = n - 2*cSliderInset;
 
   canvas().setBrushColor(0, 0, 255);
-  canvas().fillRectangle(x0 + cSliderInset,                y1 - axisPos(myMaxY, myCenterY, m),
-                         x0 + cSliderWidth - cSliderInset, y1 - axisPos(myMinY, myCenterY, m));
+  canvas().fillRectangle(x0 + cSliderInset,                y1 - axisPos(myRange.max(1), myRange.center(1), m),
+                         x0 + cSliderWidth - cSliderInset, y1 - axisPos(myRange.min(1), myRange.center(1), m));
 
   canvas().setPenWidth(1);
   canvas().setPenColor(cDefaultCol);
@@ -284,7 +281,7 @@ void JoystickCalibration::drawSliderY(int raw)
   canvas().drawLine(x0, y0 + n/2, x0 + cSliderWidth, y0 + n/2);
 
   canvas().setBrushColor(Color::BrightWhite);
-  canvas().fillEllipse(x0 + cSliderWidth/2, y1 - axisPos(raw, myCenterY, m), cSliderDot, cSliderDot);
+  canvas().fillEllipse(x0 + cSliderWidth/2, y1 - axisPos(raw, myRange.center(1), m), cSliderDot, cSliderDot);
 }
 
 // ----------------------------------------------------------------------------------------
@@ -328,8 +325,7 @@ void JoystickCalibration::drawTextLines(const char* const lines[], int numLines)
 // ----------------------------------------------------------------------------------------
 void JoystickCalibration::start()
 {
-  myCount = 0;
-  mySumX = mySumY = 0;
+  myCenter.reset();
   
   myCenterCalibrationWaitPeriod = true;
   myCenterCalibrationIsActive   = false;

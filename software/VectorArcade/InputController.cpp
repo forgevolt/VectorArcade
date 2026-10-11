@@ -1,11 +1,12 @@
 #include <Streaming.h>
 #include "InputController.h"
+using namespace joystickutilities;
 
 // ---- InputController -------------------------------------------------------------------
 
 // ----------------------------------------------------------------------------------------
 InputController::InputController()
-: myJoy(cPinJoyX, cPinJoyY, true), myIsTaskRunning(false)
+: myJoy({ AnalogAxis(cPinJoyX, true), AnalogAxis(cPinJoyY) }), myIsTaskRunning(false)
 {
   myMutex = xSemaphoreCreateMutex();
   xTaskCreatePinnedToCore(processEvents,     // Function to implement the task
@@ -58,6 +59,14 @@ void InputController::begin()
 
   // Joystick: Initialize and start processing
   myJoy.begin();
+
+  // A stored calibration that leaves no usable travel falls back to the full ADC range
+  CalibrationResult<2> stored;
+  if (loadCalibration(myJoy, cJoystickNameSpace, &stored))
+    for (size_t i=0; i<2; i++)
+      if (stored.accepted[i] == false)
+        Serial << "Joystick: stored calibration of axis " << "XY"[i]
+               << " leaves no usable travel - using the full ADC range" << endl;
 
   myIsTaskRunning = true;
   vTaskResume(myTaskHandle);

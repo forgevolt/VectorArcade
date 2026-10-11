@@ -6,8 +6,11 @@
 #include <freertos/semphr.h>
 
 #include <Bounce2.h>
-#include "Joystick2Axis.h"
+#include <JoystickUtilities.h>
 #include "Board.h"
+
+// NVS namespace of the joystick calibration
+constexpr char cJoystickNameSpace[] = "Joystick";
 
 
 // ---- InputController -------------------------------------------------------------------
@@ -42,7 +45,7 @@ class InputController
     State getState();
 
     // Direct access to the joystick object, e.g. for calibration
-    Joystick2Axis& joy() { return myJoy; }
+    joystickutilities::Joystick<2>& joy() { return myJoy; }
 
   private:
     // The buttons (Aux only on boards that have it)
@@ -53,7 +56,7 @@ class InputController
 
     // The joystick with a single button
     Bounce2::Button myBtnJoy;
-    Joystick2Axis myJoy;
+    joystickutilities::Joystick<2> myJoy;
 
     // State of each button as detected in the "processEvents" task 
     State myState;

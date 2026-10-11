@@ -130,6 +130,6 @@ uses the default order would not depend on that.
    0x4B - but converts at most about 400 times a second per axis and adds traffic to the
    bus the IMU is read on. On an ESP32-S3, measure the built-in ADC first. **Hall-effect
    joysticks** fix the other half of the problem - wear, drift and dead spots of the
-   potentiometers - and work with either choice. In the firmware, `Joystick2Axis` reads
-   through a single function, so an external ADC is a second implementation behind a
-   `Board.h` setting.
+   potentiometers - and work with either choice. In the firmware, JoystickUtilities reads
+   each axis through a replaceable read function (`ReadFunction`), so an external ADC needs
+   only its own read function, chosen by a `Board.h` setting.

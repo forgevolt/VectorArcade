@@ -13,7 +13,7 @@
 | `VectorArcade.ino` | setup of display, fuel gauge, IMU, filesystem and menu; the 25 FPS loop |
 | `Menu.*`, `MenuItem.*`, `MenuPage.*` | the main menu, its entries and the configuration page |
 | `DisplayObject.*` | base class of everything on screen, text and instruction helpers |
-| `InputController.*`, `Joystick2Axis.*` | the buttons, debounced in their own task, and the joystick |
+| `InputController.*` | the buttons, debounced in their own task, and the joystick (JoystickUtilities) |
 | `LunarLander.*`, `Eagle.*`, `LunarSurface.*`, `Camera.h`, `LunarLanderSounds.h` | Lunar Lander: game states, the lander, the endless surface, the scrolling and zooming view |
 | `Asteroids.*`, `AsteroidsGameObjects.*`, `AsteroidsSounds.h` | Asteroids: game states, ship, shots, asteroids and saucer |
 | `SoundClips.*` | loads the clips from LittleFS and checks their fingerprint |

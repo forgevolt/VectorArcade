@@ -140,6 +140,7 @@ against:
 | FabGL | 1.0.9 | display driver, canvas and fonts - GPL-3.0, see [THIRD_PARTY.md](THIRD_PARTY.md) |
 | [SoundEngine](https://github.com/forgevolt/SoundEngine) | 1.1.0 | I2S mixing and playback; 1.1.0 is the first version that builds on core 2.x |
 | [VectorUtilities](https://github.com/forgevolt/VectorUtilities) | 1.0.0 | 2D vectors and the maths helpers of both games |
+| [JoystickUtilities](https://github.com/forgevolt/JoystickUtilities) | 1.0.0 | reading, calibrating and storing the joystick |
 | Bounce2 | 2.71 | button debouncing |
 | Streaming | 6.3.0 | the `Serial <<` logging |
 | Adafruit MAX1704X | 1.0.3 | the fuel gauge |
