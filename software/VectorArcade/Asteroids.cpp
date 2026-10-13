@@ -181,6 +181,11 @@ void Asteroids::draw()
   }
   else 
   {
+    // The splash pages are static. The TFT driver keeps a single frame buffer in RAM and
+    // sends all of it on every swapBuffers(), so a page drawn once stays on screen.
+    if (myState == eSplashScreen && mySplashIsDrawn == true)
+      return;
+
     // Clear screen
     canvas().setBrushColor(Color::Black);
     canvas().clear();
@@ -236,6 +241,7 @@ void Asteroids::prepareSplashScreen()
 {
   myState = eSplashScreen;
   myShowInstructions = false;
+  mySplashIsDrawn = false;
   myStartWaitTime = millis();
 }
 
@@ -391,6 +397,7 @@ void Asteroids::stepSplashScreen(unsigned long dt)
   if (millis() - myStartWaitTime > 5000)
   {
     myShowInstructions = !myShowInstructions;
+    mySplashIsDrawn = false;
     myStartWaitTime = millis();
   }
 }
@@ -652,6 +659,8 @@ void Asteroids::drawSplashScreen()
   {
     canvas().drawBitmap(0, 0, &AsteroidsSplash);
   }
+
+  mySplashIsDrawn = true;
 }
 
 // ----------------------------------------------------------------------------------------

@@ -87,4 +87,5 @@ class Asteroids : public MenuItem
     int myNumAsteroidsHit;
 
     bool myShowInstructions;  // Toggles between the instruction screen and a splash screen bitmap
+    bool mySplashIsDrawn;     // true: the current splash page is in the frame buffer and stays there
 };
