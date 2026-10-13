@@ -16,6 +16,7 @@ build/
 *.bin
 *.map
 *.hex
+*.log
 
 # PlatformIO, if it is ever added
 .pio/

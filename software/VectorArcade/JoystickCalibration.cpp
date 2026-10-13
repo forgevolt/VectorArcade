@@ -80,7 +80,20 @@ void JoystickCalibration::step(unsigned long dt)
   // Check if a button is pressed during execution
   InputController::State s = myMenu.input().getState();
 
-  if (s.a || s.b || s.sel || s.start)  
+  // Sel leaves at any time, as in the games. Before the end of the min/max phase the stored
+  // calibration is unchanged.
+  if (s.sel == true)
+  {
+    sound().play(sound().click());
+    myCenterCalibrationIsActive = false;
+    mySamplingIsActive          = false;
+    myMinMaxCalibrationIsActive = false;
+    myResultIsActive            = false;
+    setState(eNotActive);
+    return;
+  }
+
+  if (s.a || s.b || s.start)
     myStopCalibration = true;
 
   // Reporting an axis that was not accepted? -> leave after a while or on a button
@@ -232,12 +245,12 @@ void JoystickCalibration::draw()
 
     drawProgressBar(203, released / cNumReleases);
 
-    // Counter bottom left, "B cancels." bottom right
+    // Counter bottom left, "B cancels." bottom right; ends above the FPS counter (y >= 231)
     canvas().selectFont(&fabgl::FONT_std_16);
     canvas().setPenColor(cDefaultCol);
-    canvas().drawText(30, 220, (String(myRelease+1) + " / " + String(cNumReleases)).c_str());
+    canvas().drawText(30, 217, (String(myRelease+1) + " / " + String(cNumReleases)).c_str());
     if (mySamplingIsActive == false)
-      canvas().drawText(canvas().getWidth() - 30 - canvas().textExtent("B cancels."), 220, "B cancels.");
+      canvas().drawText(canvas().getWidth() - 30 - canvas().textExtent("B cancels."), 217, "B cancels.");
   }
   else if (myMinMaxCalibrationIsActive == true)
   {
