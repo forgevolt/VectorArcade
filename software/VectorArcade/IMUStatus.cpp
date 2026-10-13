@@ -72,7 +72,7 @@ void IMUStatus::draw()
   canvas().drawLine(cPosXIMU-cRadius, cPosYIMU, cPosXIMU+cRadius, cPosYIMU);
   canvas().drawLine(cPosXIMU, cPosYIMU-cRadius, cPosXIMU, cPosYIMU+cRadius);
   canvas().drawEllipse(cPosXIMU, cPosYIMU, cRadius*2, cRadius*2);
-  canvas().setBrushColor(71,  212, 90);
+  canvas().setBrushColor(cIMUSpotCol);
   canvas().fillEllipse(spot.y*-1+cPosXIMU, spot.x+cPosYIMU, 5, 5);
 }
 

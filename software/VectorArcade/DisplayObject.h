@@ -1,11 +1,10 @@
 #pragma once
 
 #include <fabgl.h>
+#include "Theme.h"
 
 // ---- DisplayObject ---------------------------------------------------------------------
 // Abstract base class for objects to be displayed.
-
-const RGB888 cDefaultCol (170, 170, 170); // Default color for text and border
 
 class DisplayObject
 {

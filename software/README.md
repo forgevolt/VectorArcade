@@ -20,6 +20,7 @@
 | `JoystickCalibration.*`, `IMUCalibration.*`, `SoundVolume.*`, `WipeAndReset.*`, `FPSToggle.*` | the configuration entries |
 | `BatteryStatus.*`, `IMUStatus.*` | the battery indicator and the IMU readout in the menu |
 | `Version.h` | the firmware version |
+| `Theme.h` | the colours of the user interface, the same on both consoles |
 | `BoardSelect.h.template` | the console to build for, and the sound source (see below) |
 | `Board.h`, `PinMap.h`, `Layout.h`, `AsteroidsSplash.h` | forward to the selected console's files in `boards/` |
 | `boards/<console>/` | per console: GPIO (`PinMap.h`), display and features (`Board.h`), screen positions (`Layout.h`), the Asteroids splash image |

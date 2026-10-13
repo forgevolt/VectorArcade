@@ -185,8 +185,8 @@ void LunarSurface::draw()
     // --- Bonus landing zones
     if (myDisplayLandingZones == true)
     {
-      canvas().setPenColor(210, 210, 210);
-      canvas().setBrushColor(210, 210, 210);
+      canvas().setPenColor(cLandingZoneCol);
+      canvas().setBrushColor(cLandingZoneCol);
 
       for (int i=0; i<4; i++)
       {
@@ -214,7 +214,7 @@ void LunarSurface::draw()
     }
 
     // ---- Stars
-    canvas().setPenColor(80, 80, 80);
+    canvas().setPenColor(cStarCol);
 
     for (size_t i=0; i<sizeof(cStars)/sizeof(float); i+=2)
     {

@@ -76,7 +76,7 @@ void DisplayObject::drawInstructions(const String& sel, const String& start,
 
 #if BOARD_HAS_AUX_BUTTON()
   // Sel
-  myCanvas.setBrushColor(80, 80, 80);
+  myCanvas.setBrushColor(cShadowCol);
   myCanvas.fillEllipse(35+2, 121+2, 25, 15);
   myCanvas.setBrushColor(Color::Black);
   myCanvas.fillEllipse(35, 121, 25, 15);
@@ -87,7 +87,7 @@ void DisplayObject::drawInstructions(const String& sel, const String& start,
   myCanvas.drawText(65, 145-8, sel.c_str());
 
   // Start
-  myCanvas.setBrushColor(80, 80, 80);
+  myCanvas.setBrushColor(cShadowCol);
   myCanvas.fillEllipse(25+75+2, 121+2, 25, 15);
   myCanvas.setBrushColor(Color::Black);
   myCanvas.fillEllipse(25+75, 121, 25, 15);
@@ -98,7 +98,7 @@ void DisplayObject::drawInstructions(const String& sel, const String& start,
   myCanvas.drawText(131, 103-8, start.c_str()); 
 
   // A
-  myCanvas.setBrushColor(80, 80, 80);
+  myCanvas.setBrushColor(cShadowCol);
   myCanvas.fillEllipse(140+2, 190+2, 20, 20);
   myCanvas.setBrushColor(Color::Black);
   myCanvas.fillEllipse(140, 190, 20, 20);
@@ -109,7 +109,7 @@ void DisplayObject::drawInstructions(const String& sel, const String& start,
   myCanvas.drawText(169, 213-8, a.c_str());
 
   // B
-  myCanvas.setBrushColor(80, 80, 80);
+  myCanvas.setBrushColor(cShadowCol);
   myCanvas.fillEllipse(140+60+2, 190+2, 20, 20);
   myCanvas.setBrushColor(Color::Black);
   myCanvas.fillEllipse(140+60, 190, 20, 20);
@@ -120,7 +120,7 @@ void DisplayObject::drawInstructions(const String& sel, const String& start,
   myCanvas.drawText(231, 130+35-8, b.c_str());
 
   // X
-  myCanvas.setBrushColor(80, 80, 80);
+  myCanvas.setBrushColor(cShadowCol);
   myCanvas.fillEllipse(140+30+2, 190-40+2, 20, 20);
   myCanvas.setBrushColor(Color::Black);
   myCanvas.fillEllipse(140+30, 190-40, 20, 20);
@@ -136,7 +136,7 @@ void DisplayObject::drawInstructions(const String& sel, const String& start,
   (void)x;
 
   // Sel
-  myCanvas.setBrushColor(80, 80, 80);
+  myCanvas.setBrushColor(cShadowCol);
   myCanvas.fillRectangle(25+2, 111+2, 45+2, 131+2);
   myCanvas.setBrushColor(Color::Black);
   myCanvas.fillRectangle(25, 111, 45, 131);
@@ -148,7 +148,7 @@ void DisplayObject::drawInstructions(const String& sel, const String& start,
 
 
   // Start
-  myCanvas.setBrushColor(80, 80, 80);
+  myCanvas.setBrushColor(cShadowCol);
   myCanvas.fillPath(triangleShadow, 3);
   myCanvas.setBrushColor(Color::Black);
   myCanvas.fillPath(triangle, 3);
@@ -159,7 +159,7 @@ void DisplayObject::drawInstructions(const String& sel, const String& start,
   myCanvas.drawText(131, 97, start.c_str()); 
 
   // A
-  myCanvas.setBrushColor(80, 80, 80);
+  myCanvas.setBrushColor(cShadowCol);
   myCanvas.fillEllipse(120+2, 190+2, 20, 20);
   myCanvas.setBrushColor(Color::Black);
   myCanvas.fillEllipse(120, 190, 20, 20);
@@ -170,7 +170,7 @@ void DisplayObject::drawInstructions(const String& sel, const String& start,
   myCanvas.drawText(149, 206, a.c_str());
 
   // B
-  myCanvas.setBrushColor(80, 80, 80);
+  myCanvas.setBrushColor(cShadowCol);
   myCanvas.fillEllipse(142+2, 155+2, 20, 20);
   myCanvas.setBrushColor(Color::Black);
   myCanvas.fillEllipse(142, 155, 20, 20);

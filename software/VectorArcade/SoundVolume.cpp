@@ -74,7 +74,7 @@ void SoundVolume::draw()
     canvas().setLineEnds(LineEnds::None);
     canvas().setPenColor(cDefaultCol);
     canvas().drawRectangle(30, 200-10, canvas().getWidth()-30, 200+10);
-    canvas().setBrushColor(0, 0, 255);
+    canvas().setBrushColor(cBarCol);
     canvas().fillRectangle(33, 200-6, 33+float(canvas().getWidth()-66)/200.0f*sound().getVolume(), 200+7);
   }
 }

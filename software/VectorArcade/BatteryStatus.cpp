@@ -16,13 +16,6 @@ const int cSegWidth   = Layout::cBatterySegmentWidth;
 const int cTermWidth  = Layout::cBatteryTerminalWidth;
 const int cTermHeight = Layout::cBatteryTerminalHalfHeight;
 
-// Colors for the different charge levels
-const RGB888 c80_100    (71,  212, 90);
-const RGB888 c60_80     (153, 217, 74);
-const RGB888 c40_60     (255, 212, 5);
-const RGB888 c20_40     (233, 113, 50);
-const RGB888 c00_20     (144, 0,   0);
-
 } // namespace
 
 // ----------------------------------------------------------------------------------------
@@ -65,27 +58,27 @@ void BatteryStatus::draw()
  
   if (myCellPercent > 80)
   {
-    col = c80_100;
+    col = cBattery80_100Col;
     numSeg = 5;
   }
   else if (myCellPercent > 60 && myCellPercent <= 80)
   {
-    col = c60_80;
+    col = cBattery60_80Col;
     numSeg = 4; 
   }
   else if (myCellPercent > 40 && myCellPercent <= 60)
   {
-    col = c40_60;
+    col = cBattery40_60Col;
     numSeg = 3;
   }
   else if (myCellPercent > 20 && myCellPercent <= 40)
   {
-    col = c20_40;
+    col = cBattery20_40Col;
     numSeg = 2;
   }
   else
   {
-    col = c00_20;
+    col = cBattery00_20Col;
     numSeg = 1;
   }
 

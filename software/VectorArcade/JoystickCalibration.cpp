@@ -22,9 +22,6 @@ const int cPushThreshold = DirectionConfig().onThreshold;
 const unsigned long cCenterSettleDuration = 200;
 const unsigned long cCenterSampleDuration = 1000;
 
-const RGB888 cPushedCol(0, 200, 0);    // Arrow and tick once the stick was pushed
-const RGB888 cDimCol(90, 90, 90);      // "press A" while A is not accepted yet
-
 // Total of 10 seconds to move both axes to their min/max positions
 const unsigned long cMinMaxDuration = 10000;
 
@@ -286,7 +283,7 @@ void JoystickCalibration::drawField(int rawX, int rawY)
 
   // Range covered so far; y grows upwards on the joystick and downwards on the screen
   const RangeTracker<2>& r = myRange;
-  canvas().setBrushColor(0, 0, 140);
+  canvas().setBrushColor(cRangeCol);
   canvas().fillRectangle(x0 + axisPos(r.min(0), r.center(0), n), y0 + n - axisPos(r.max(1), r.center(1), n),
                          x0 + axisPos(r.max(0), r.center(0), n), y0 + n - axisPos(r.min(1), r.center(1), n));
 
@@ -313,7 +310,7 @@ void JoystickCalibration::drawSliderX(int raw)
   const int x1 = x0 + cSliderInset;
   const int m  = n - 2*cSliderInset;
 
-  canvas().setBrushColor(0, 0, 255);
+  canvas().setBrushColor(cBarCol);
   canvas().fillRectangle(x1 + axisPos(myRange.min(0), myRange.center(0), m), y0 + cSliderInset,
                          x1 + axisPos(myRange.max(0), myRange.center(0), m), y0 + cSliderWidth - cSliderInset);
 
@@ -337,7 +334,7 @@ void JoystickCalibration::drawSliderY(int raw)
   const int y1 = y0 + n - cSliderInset;
   const int m  = n - 2*cSliderInset;
 
-  canvas().setBrushColor(0, 0, 255);
+  canvas().setBrushColor(cBarCol);
   canvas().fillRectangle(x0 + cSliderInset,                y1 - axisPos(myRange.max(1), myRange.center(1), m),
                          x0 + cSliderWidth - cSliderInset, y1 - axisPos(myRange.min(1), myRange.center(1), m));
 
@@ -361,7 +358,7 @@ void JoystickCalibration::drawProgressBar(int y, float fraction)
   canvas().setLineEnds(LineEnds::None);
   canvas().setPenColor(cDefaultCol);
   canvas().drawRectangle(30, y-10, w-30, y+10);
-  canvas().setBrushColor(0, 0, 255);
+  canvas().setBrushColor(cBarCol);
   canvas().fillRectangle(33, y-6, 33 + (w-66)*fraction, y+7);
   canvas().setPenWidth(1);
 }
@@ -414,11 +411,11 @@ void JoystickCalibration::drawArrow(int direction, bool pushed)
 
   if (pushed == true)
   {
-    canvas().setBrushColor(cPushedCol);
+    canvas().setBrushColor(cConfirmCol);
     canvas().fillPath(p, 7);
 
     // Tick right of the arrow
-    canvas().setPenColor(cPushedCol);
+    canvas().setPenColor(cConfirmCol);
     canvas().setPenWidth(2);
     canvas().drawLine(cx + 48, cy,     cx + 56, cy + 9);
     canvas().drawLine(cx + 56, cy + 9, cx + 72, cy - 12);
