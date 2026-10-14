@@ -25,33 +25,42 @@ class JoystickCalibration : public MenuItem
     unsigned long myCalibrationStartTime;
     bool myCenterCalibrationIsActive;      // true: center calibration (the releases) is active
     int  myRelease;                        // Center calibration: current release, 0 .. cNumReleases-1
-    bool myPushed;                         // true: the stick went past half-way in the direction of this release
-    bool mySamplingIsActive;               // true: A was pressed, the rest position of this release is measured
-    unsigned long mySamplingStartTime;
+
+    // The current release: pushed in the step's direction, let go, holding still, measured
+    enum class ERelease { ePush, eLetGo, eSettle, eMeasure, eDone };
+    ERelease myReleaseState;
+    unsigned long myReleaseStateTime;      // start of the still window, the measurement or the check mark
+    std::array<int, 2> myStillMin;         // raw range of each axis within the still window
+    std::array<int, 2> myStillMax;
+    std::array<long, 2> myRestSum;         // rest positions of the finished releases
     bool myMinMaxCalibrationIsActive;      // true: min/max measurement is active
     bool myStopCalibration;                // true: user has pressed a button during min/max calibration -> stop
-    bool myResultIsActive;                 // true: showing that an axis was not accepted
+    bool myResultIsActive;                 // true: showing that not every edge was reached
     unsigned long myResultStartTime;
-    joystickutilities::CalibrationResult<2> myResult;
     
-    joystickutilities::CenterSampler<2> myCenter;  // Center calibration: averaged resting position
+    joystickutilities::CenterSampler<2> myCenter;  // Center calibration: rest position of the current release
     joystickutilities::RangeTracker<2>  myRange;   // Min/max calibration: center and travel of each axis
 
-    // Square field: range covered so far and current position
-    void drawField(int rawX, int rawY);
+    // Advances the current release; starts the min/max calibration after the last one
+    void stepRelease();
 
-    // Horizontal (x axis, below the field) and vertical (y axis, left of the field) sliders:
-    // range covered so far and current position
-    void drawSliderX(int raw);
-    void drawSliderY(int raw);
+    // Widens the still window by one raw reading. When an axis has moved further than
+    // cStillCounts, the window starts again from this reading and the result is false.
+    bool isStill();
 
-    // Progress bar centered at 'y', 'fraction' in [0, 1]
-    void drawProgressBar(int y, float fraction);
+    // Center from the rest positions of all releases; hands over to the min/max calibration
+    void startMinMax();
 
-    // Lines of text in the column right of the field
-    void drawTextLines(const char* const lines[], int numLines);
+    // The joystick as a circle: an arrow in the step's direction in the color of its state (a
+    // check mark once measured), a dot where the stick is, the state in words below and one
+    // progress dot per release
+    void drawStick();
 
-    // Arrow in the middle of the screen pointing in the direction of release 'direction'
-    // (0 up, 1 right, 2 down, 3 left): outlined, or filled green with a tick once 'pushed'
-    void drawArrow(int direction, bool pushed);
+    // The min/max calibration in the circle of drawStick(): the range covered so far, one marker
+    // per edge (filled once reached; on the result also those not reached, in their own color),
+    // a dot where the stick is (not on the result) and the edges reached in words below
+    void drawRange(bool result);
+
+    // Bar below the circle with the time left in the min/max calibration, 'fraction' in [0, 1]
+    void drawTimeLeft(float fraction);
 };

@@ -8,11 +8,13 @@
 
 // ---- General
 const RGB888 cDefaultCol  (170, 170, 170);  // Text, frames, lines and vector shapes
-const RGB888 cDimCol      ( 90,  90,  90);  // Text of a step that is not available yet
 const RGB888 cShadowCol   ( 80,  80,  80);  // Shadow of the buttons in the instruction screens
-const RGB888 cBarCol      (  0,   0, 255);  // Fill of progress and volume bars, joystick sliders
-const RGB888 cRangeCol    (  0,   0, 140);  // Range covered in the joystick calibration field
-const RGB888 cConfirmCol  (  0, 200,   0);  // Joystick calibration: arrow and tick once pushed
+const RGB888 cBarCol      (  0,   0, 255);  // Fill of the volume and time bars, outline of the joystick range
+const RGB888 cRangeCol    (  0,   0, 140);  // Range covered in the joystick calibration
+const RGB888 cConfirmCol  (  0, 200,   0);  // Joystick calibration: release measured, edge reached
+const RGB888 cLetGoCol    ( 74, 150, 222);  // Joystick calibration: stick pushed, now let go
+const RGB888 cHoldStillCol(255, 180,   0);  // Joystick calibration: stick released, hold still
+const RGB888 cMissedCol   (255, 180,   0);  // Joystick calibration: edge not reached, calibration not stored
 const RGB888 cIMUSpotCol  ( 71, 212,  90);  // Tilt indicator of the IMU status
 
 // ---- Battery charge levels

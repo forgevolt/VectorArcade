@@ -20,15 +20,6 @@ namespace Layout
   constexpr int  cBatteryTerminalHalfHeight = 5;
   constexpr bool cBatteryDoubleOutline      = true;
 
-  // ---- Joystick calibration: position field, axis sliders, text column and progress bar
-  constexpr int cJoyCalFieldPosX  = 34;     // Square field showing the joystick position
-  constexpr int cJoyCalFieldPosY  = 72;
-  constexpr int cJoyCalFieldSize  = 100;
-  constexpr int cJoyCalTextPosX   = 146;    // Instructions, right of the field
-  constexpr int cJoyCalTextPosY   = 76;
-  constexpr bool cJoyCalLargeText = false;  // Instructions in FONT_std_22 (true) or FONT_std_18
-  constexpr int cJoyCalProgressY  = 220;    // Center line of the progress bar
-
   // ---- Lunar Lander
   constexpr float cLunarZoom        = 1.3f; // Chosen for legibility on the small panel
   constexpr float cLunarMaxWorldY   = 247;  // Lowest point (world coordinates)

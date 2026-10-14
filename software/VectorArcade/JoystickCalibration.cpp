@@ -1,9 +1,6 @@
 #include "DisplayObject.h"
 #include <Streaming.h>
 #include "JoystickCalibration.h"
-#include "Layout.h"
-#include <VectorUtilities.h>
-using namespace vectorutilities;
 using namespace joystickutilities;
 
 
@@ -13,50 +10,113 @@ namespace
 {
 
 // Center calibration: a sprung stick rests at a slightly different spot depending on the
-// direction it was released from, so the center is averaged over one release per direction
-// (up, right, down, left). A is accepted once the stick has been pushed past half-way in that
-// direction - the threshold of the menu's direction keys - and the rest position is then
-// measured once the console has settled from the button press.
-const int cNumReleases = 4;
-const int cPushThreshold = DirectionConfig().onThreshold;
-const unsigned long cCenterSettleDuration = 200;
-const unsigned long cCenterSampleDuration = 1000;
+// direction it was released from, so the center is the average of the rest positions after one
+// release per direction. A release is detected without a button: pushed past the on-threshold
+// of the direction keys, back under their off-threshold, every axis still for cStillDuration,
+// then measured for cMeasureDuration. A new push in the step's direction starts it over.
+// A released stick is still after about 0.3 - 0.5 s; at rest the noise stays within a few counts.
+const unsigned long cStillDuration   = 200;  // every axis within cStillCounts for this long (ms) ...
+const int           cStillCounts     = 15;   // ... counts as holding still
+const unsigned long cMeasureDuration = 300;  // then the rest position is averaged for this long (ms)
+const unsigned long cDoneDuration    = 400;  // the check mark stays this long (ms)
+
+// The release steps: axis (0 x, 1 y), direction of the push and the prompt
+struct ReleaseStep
+{
+  size_t axis;
+  int sign;
+  const char* prompt;
+};
+
+const ReleaseStep cReleaseSteps[] =
+{
+  { 1, +1, "Push up and let go" },   { 1, -1, "Push down and let go" },
+  { 0, -1, "Push left and let go" }, { 0, +1, "Push right and let go" }
+};
+
+const int cNumReleases = sizeof(cReleaseSteps) / sizeof(cReleaseSteps[0]);
+
+// Layout of the center calibration (pixels)
+const int cStickY      = 146;                         // center of the joystick drawing
+const int cStickR      = 36;                          // radius of its circle
+const int cStickDotR   = 6;                           // the dot that follows the stick ...
+const int cStickTravel = cStickR - cStickDotR - 2;    // ... this far from the center at full deflection
+const int cStatusY     = 200;                         // the state in words
+const int cProgressY   = 229;                         // one dot per release
 
 // Total of 10 seconds to move both axes to their min/max positions
 const unsigned long cMinMaxDuration = 10000;
 
-// Time an axis that was not accepted is reported on screen, unless a button is pressed
+// Time the edges not reached are reported on screen, unless a button is pressed
 const unsigned long cResultDuration = 5000;
 
-// Geometry around the position field (pixels)
-const int cSliderWidth = 12;   // Width of the x/y sliders
-const int cSliderGap   = 6;    // Distance between field and slider
-const int cSliderInset = 3;    // Gap between a slider's frame and its blue bar, as in the progress bar
-const int cDotSize     = 9;    // Diameter of the current-position dot
-const int cSliderDot   = 7;    // Diameter of the dot on a slider
+// Layout of the min/max calibration (pixels): a circle like the one of the center calibration,
+// with the range covered so far inside and one marker per edge outside
+const int cRangeR      = 40;                         // radius of the circle
+const int cRangeDotR   = 6;                          // the dot that follows the stick ...
+const int cRangeTravel = cRangeR - cRangeDotR - 2;   // ... this far from the center at full deflection
+const int cRangePoints = 8;                          // corners of the range shape per quarter
+const int cTimeBarY    = 229;                        // center line of the bar showing the time left
+const int cTimeBarHalf = 40;                         // half its length
+
+// An edge counts as reached once the stick has covered this share of the way from the center
+// to the end of the ADC range. The range is applied and stored only if every edge is reached.
+const float cEdgeReached = 0.75f;
+
+// The edges in the order of the range shape's quarters, counterclockwise from the right
+struct Edge
+{
+  size_t axis;
+  int sign;
+};
+
+const Edge cEdges[4] = { { 0, +1 }, { 1, +1 }, { 0, -1 }, { 1, -1 } };   // right, up, left, down
 
 // Highest raw value of an axis (12-bit ADC, the joystick's AnalogConfig)
 const int cAdcMax = AnalogConfig().adcMax;
 
 // ----------------------------------------------------------------------------------------
-// Position of a raw ADC value on an axis that is 'len' pixels long, with the calibrated
-// center in the middle: [0, center] fills the first half, [center, cAdcMax] the second,
-// so the middle always marks the center and each half shows its own travel.
-int axisPos(int raw, int center, int len)
+// Share of the way from the calibrated center to the end of the ADC range in the direction of
+// 'raw': 0 at the center, +1 at cAdcMax, -1 at 0.
+float travel(int raw, int center)
 {
-  if (raw <= center)
-    return mapf(raw, 0, center, 0, len/2);
+  if (raw >= center)
+    return (center < cAdcMax) ? float(raw - center) / (cAdcMax - center) : 0.0f;
 
-  return mapf(raw, center, cAdcMax, len/2, len);
+  return (center > 0) ? -float(center - raw) / center : 0.0f;
 }
 
 // ----------------------------------------------------------------------------------------
-// True if the stick (joystick values, y up) is pushed past half-way in the direction of
-// release 'direction' (0 up, 1 right, 2 down, 3 left)
-bool isPushed(int direction, int x, int y)
+// Share of the way to an edge covered so far
+float reach(const RangeTracker<2>& r, const Edge& e)
 {
-  const int along[cNumReleases] = { y, x, -y, -x };
-  return along[direction] > cPushThreshold;
+  return (e.sign > 0) ? travel(r.max(e.axis), r.center(e.axis)) : -travel(r.min(e.axis), r.center(e.axis));
+}
+
+// ----------------------------------------------------------------------------------------
+// Number of edges reached so far
+int edgesReached(const RangeTracker<2>& r)
+{
+  int n = 0;
+  for (const Edge& e : cEdges)
+    if (reach(r, e) >= cEdgeReached)
+      n++;
+
+  return n;
+}
+
+// ----------------------------------------------------------------------------------------
+// A point of a shape drawn pointing up relative to (cx, cy), turned to point in the direction
+// of 'axis' (0 x, 1 y) and 'sign'
+Point turned(int x, int y, size_t axis, int sign, int cx, int cy)
+{
+  if (axis == 0)          // right (sign +1) or left (sign -1)
+    return Point(cx - y*sign, cy + x*sign);
+
+  if (sign < 0)           // down
+    return Point(cx - x, cy - y);
+
+  return Point(cx + x, cy + y);
 }
 
 } // namespace
@@ -83,7 +143,6 @@ void JoystickCalibration::step(unsigned long dt)
   {
     sound().play(sound().click());
     myCenterCalibrationIsActive = false;
-    mySamplingIsActive          = false;
     myMinMaxCalibrationIsActive = false;
     myResultIsActive            = false;
     setState(eNotActive);
@@ -93,7 +152,7 @@ void JoystickCalibration::step(unsigned long dt)
   if (s.a || s.b || s.start)
     myStopCalibration = true;
 
-  // Reporting an axis that was not accepted? -> leave after a while or on a button
+  // Reporting the edges not reached? -> leave after a while or on a button
   if (myResultIsActive == true)
   {
     if (myStopCalibration == true || millis()-myResultStartTime > cResultDuration)
@@ -104,61 +163,10 @@ void JoystickCalibration::step(unsigned long dt)
     return;
   }
 
-  // Center calibration: waiting for the stick to be pushed, released and A to be pressed;
-  // B cancels without changing the stored calibration
-  if (myCenterCalibrationIsActive == true && mySamplingIsActive == false)
+  // Center calibration: the releases, detected without a button
+  if (myCenterCalibrationIsActive == true)
   {
-    if (isPushed(myRelease, s.x, s.y) == true)
-      myPushed = true;
-
-    if (s.b == true)
-    {
-      myCenterCalibrationIsActive = false;
-      setState(eNotActive);
-    }
-    else if (s.a == true && myPushed == true)
-    {
-      mySamplingIsActive  = true;
-      mySamplingStartTime = millis();
-    }
-  }
-
-  // Center calibration: measure the rest position of this release, after the settle time
-  else if (myCenterCalibrationIsActive == true && millis()-mySamplingStartTime <= cCenterSettleDuration+cCenterSampleDuration)
-  {
-    if (millis()-mySamplingStartTime > cCenterSettleDuration)
-      myCenter.add(myJoy);
-  }
-
-  // Release measured -> next release
-  else if (myCenterCalibrationIsActive == true && myRelease < cNumReleases-1)
-  {
-    mySamplingIsActive = false;
-    myPushed           = false;
-    myRelease++;
-    sound().play(sound().signal());
-  }
-
-  // All releases measured -> start with min/max calibration
-  else if (myCenterCalibrationIsActive == true)
-  {
-    // Unlikely, but better safe than sorry: without samples there is no center
-    if (myCenter.count() == 0)
-    {
-      myCenterCalibrationIsActive = false;
-      setState(eNotActive);
-      Serial << __PRETTY_FUNCTION__  << " no center samples " << endl;
-      return;
-    }
-
-    myRange = RangeTracker<2>(myCenter.center());
-
-    myCenterCalibrationIsActive = false;
-    mySamplingIsActive          = false;
-    myMinMaxCalibrationIsActive = true;
-    myStopCalibration           = false;
-    myCalibrationStartTime      = millis();
-    sound().play(sound().signal());
+    stepRelease();
   }
 
   // User has pressed a button while min/max calibration is active -> abort
@@ -178,13 +186,16 @@ void JoystickCalibration::step(unsigned long dt)
   else if (myMinMaxCalibrationIsActive == true && millis()-myCalibrationStartTime > cMinMaxDuration)
   {
     myMinMaxCalibrationIsActive = false;
-    myResult = myJoy.setCalibration(myRange.calibration());
 
-    // Stored as applied: a rejected axis stores the full range it fell back to
-    saveCalibration(myJoy, cJoystickNameSpace);
+    Serial << "Joystick: range X " << myRange.min(0) << " " << myRange.center(0) << " " << myRange.max(0)
+           << ", Y " << myRange.min(1) << " " << myRange.center(1) << " " << myRange.max(1) << endl;
 
-    if (myResult.allAccepted())
+    // Applied and stored only with every edge reached, otherwise the current calibration stays.
+    // An axis that reached both edges is far beyond the minimum travel setCalibration() checks.
+    if (edgesReached(myRange) == 4)
     {
+      myJoy.setCalibration(myRange.calibration());
+      saveCalibration(myJoy, cJoystickNameSpace);
       setState(eNotActive);
     }
     else
@@ -217,228 +228,346 @@ void JoystickCalibration::draw()
   canvas().setPenColor(cDefaultCol);
   canvas().drawLine(0, 60, canvas().getWidth(), 60);
 
-  // One reading per frame for the dots
-  int rawX = myJoy.readRaw(0);
-  int rawY = myJoy.readRaw(1);
-
   if (myCenterCalibrationIsActive == true)
   {
-    float released = myRelease;
-
-    if (mySamplingIsActive == false)
-    {
-      drawCenteredText(66, "Push the stick,");
-      drawArrow(myRelease, myPushed);
-
-      canvas().setPenColor(myPushed ? cDefaultCol : cDimCol);
-      drawCenteredText(164, "let it go, press A.");
-      canvas().setPenColor(cDefaultCol);
-    }
-    else
-    {
-      drawCenteredText(66, "Don't move the joystick!");
-      released += float(millis()-mySamplingStartTime) / (cCenterSettleDuration+cCenterSampleDuration);
-    }
-
-    drawProgressBar(203, released / cNumReleases);
-
-    // Counter bottom left, "B cancels." bottom right; ends above the FPS counter (y >= 231)
-    canvas().selectFont(&fabgl::FONT_std_16);
-    canvas().setPenColor(cDefaultCol);
-    canvas().drawText(30, 217, (String(myRelease+1) + " / " + String(cNumReleases)).c_str());
-    if (mySamplingIsActive == false)
-      canvas().drawText(canvas().getWidth() - 30 - canvas().textExtent("B cancels."), 217, "B cancels.");
+    drawCenteredText(66, cReleaseSteps[myRelease].prompt);
+    drawStick();
   }
   else if (myMinMaxCalibrationIsActive == true)
   {
-    drawField(rawX, rawY);
-    drawSliderX(rawX);
-    drawSliderY(rawY);
-
-    const char* const lines[] = { "Move the", "joystick to", "all edges.", "", "A button", "exits." };
-    drawTextLines(lines, 6);
-
-    drawProgressBar(Layout::cJoyCalProgressY, float(millis()-myCalibrationStartTime) / cMinMaxDuration);
-  } 
+    drawCenteredText(66, "Push to all four edges");
+    drawRange(false);
+    drawTimeLeft(1.0f - float(millis()-myCalibrationStartTime) / cMinMaxDuration);
+  }
   else if (myResultIsActive == true)
   {
-    drawField(rawX, rawY);
-    drawSliderX(rawX);
-    drawSliderY(rawY);
-
-    const char* axes = (myResult.accepted[0] == false && myResult.accepted[1] == false) ? "X and Y axes:"
-                     : (myResult.accepted[0] == false)                                  ? "X axis:"
-                     :                                                                    "Y axis:";
-    const char* const lines[] = { axes, "not moved.", "Full range", "stored." };
-    drawTextLines(lines, 4);
+    drawCenteredText(66, "Not all edges reached");
+    drawRange(true);
   }
 }
 
 // ----------------------------------------------------------------------------------------
-void JoystickCalibration::drawField(int rawX, int rawY)
+void JoystickCalibration::stepRelease()
 {
-  const int x0 = Layout::cJoyCalFieldPosX;
-  const int y0 = Layout::cJoyCalFieldPosY;
-  const int n  = Layout::cJoyCalFieldSize;
+  const ReleaseStep& current = cReleaseSteps[myRelease];
+  const DirectionConfig directions;
 
-  // Range covered so far; y grows upwards on the joystick and downwards on the screen
-  const RangeTracker<2>& r = myRange;
-  canvas().setBrushColor(cRangeCol);
-  canvas().fillRectangle(x0 + axisPos(r.min(0), r.center(0), n), y0 + n - axisPos(r.max(1), r.center(1), n),
-                         x0 + axisPos(r.max(0), r.center(0), n), y0 + n - axisPos(r.min(1), r.center(1), n));
+  // A push in the step's direction starts the release over, also while settling or measuring
+  if (myReleaseState != ERelease::eDone && myJoy.get(current.axis) * current.sign > directions.onThreshold)
+    myReleaseState = ERelease::eLetGo;
 
-  // Frame and center cross
-  canvas().setPenWidth(1);
-  canvas().setPenColor(cDefaultCol);
-  canvas().drawRectangle(x0, y0, x0 + n, y0 + n);
-  canvas().drawLine(x0 + n/2, y0, x0 + n/2, y0 + n);
-  canvas().drawLine(x0, y0 + n/2, x0 + n, y0 + n/2);
-
-  // Current position
-  canvas().setBrushColor(Color::BrightWhite);
-  canvas().fillEllipse(x0 + axisPos(rawX, r.center(0), n), y0 + n - axisPos(rawY, r.center(1), n), cDotSize, cDotSize);
-}
-
-// ----------------------------------------------------------------------------------------
-void JoystickCalibration::drawSliderX(int raw)
-{
-  const int x0 = Layout::cJoyCalFieldPosX;
-  const int n  = Layout::cJoyCalFieldSize;
-  const int y0 = Layout::cJoyCalFieldPosY + n + cSliderGap;
-
-  // Bar and dot use the length inside the frame, so the bar keeps its distance at both ends
-  const int x1 = x0 + cSliderInset;
-  const int m  = n - 2*cSliderInset;
-
-  canvas().setBrushColor(cBarCol);
-  canvas().fillRectangle(x1 + axisPos(myRange.min(0), myRange.center(0), m), y0 + cSliderInset,
-                         x1 + axisPos(myRange.max(0), myRange.center(0), m), y0 + cSliderWidth - cSliderInset);
-
-  canvas().setPenWidth(1);
-  canvas().setPenColor(cDefaultCol);
-  canvas().drawRectangle(x0, y0, x0 + n, y0 + cSliderWidth);
-  canvas().drawLine(x0 + n/2, y0, x0 + n/2, y0 + cSliderWidth);
-
-  canvas().setBrushColor(Color::BrightWhite);
-  canvas().fillEllipse(x1 + axisPos(raw, myRange.center(0), m), y0 + cSliderWidth/2, cSliderDot, cSliderDot);
-}
-
-// ----------------------------------------------------------------------------------------
-void JoystickCalibration::drawSliderY(int raw)
-{
-  const int n  = Layout::cJoyCalFieldSize;
-  const int x0 = Layout::cJoyCalFieldPosX - cSliderGap - cSliderWidth;
-  const int y0 = Layout::cJoyCalFieldPosY;
-
-  // Bar and dot use the length inside the frame, so the bar keeps its distance at both ends
-  const int y1 = y0 + n - cSliderInset;
-  const int m  = n - 2*cSliderInset;
-
-  canvas().setBrushColor(cBarCol);
-  canvas().fillRectangle(x0 + cSliderInset,                y1 - axisPos(myRange.max(1), myRange.center(1), m),
-                         x0 + cSliderWidth - cSliderInset, y1 - axisPos(myRange.min(1), myRange.center(1), m));
-
-  canvas().setPenWidth(1);
-  canvas().setPenColor(cDefaultCol);
-  canvas().drawRectangle(x0, y0, x0 + cSliderWidth, y0 + n);
-  canvas().drawLine(x0, y0 + n/2, x0 + cSliderWidth, y0 + n/2);
-
-  canvas().setBrushColor(Color::BrightWhite);
-  canvas().fillEllipse(x0 + cSliderWidth/2, y1 - axisPos(raw, myRange.center(1), m), cSliderDot, cSliderDot);
-}
-
-// ----------------------------------------------------------------------------------------
-void JoystickCalibration::drawProgressBar(int y, float fraction)
-{
-  const int w = canvas().getWidth();
-
-  fraction = constrain(fraction, 0.0f, 1.0f);
-
-  canvas().setPenWidth(2);
-  canvas().setLineEnds(LineEnds::None);
-  canvas().setPenColor(cDefaultCol);
-  canvas().drawRectangle(30, y-10, w-30, y+10);
-  canvas().setBrushColor(cBarCol);
-  canvas().fillRectangle(33, y-6, 33 + (w-66)*fraction, y+7);
-  canvas().setPenWidth(1);
-}
-
-// ----------------------------------------------------------------------------------------
-void JoystickCalibration::drawTextLines(const char* const lines[], int numLines)
-{
-  const int lineSpacing = Layout::cJoyCalLargeText ? 22 : 18;
-
-  canvas().setPenColor(cDefaultCol);
-  canvas().selectFont(Layout::cJoyCalLargeText ? &fabgl::FONT_std_22 : &fabgl::FONT_std_18);
-
-  // An empty line is a gap of half a line
-  int y = Layout::cJoyCalTextPosY;
-  for (int i=0; i<numLines; i++)
+  switch (myReleaseState)
   {
-    if (lines[i][0] == '\0')
-    {
-      y += lineSpacing/2;
-      continue;
-    }
-    canvas().drawText(Layout::cJoyCalTextPosX, y, lines[i]);
-    y += lineSpacing;
+    case ERelease::ePush:
+      break;
+
+    case ERelease::eLetGo:
+      if (abs(myJoy.getX()) < directions.offThreshold && abs(myJoy.getY()) < directions.offThreshold)
+      {
+        myReleaseState     = ERelease::eSettle;
+        myReleaseStateTime = millis();
+        for (size_t i=0; i<2; i++)   // the still window starts here
+          myStillMin[i] = myStillMax[i] = myJoy.readRaw(i);
+      }
+      break;
+
+    case ERelease::eSettle:
+    case ERelease::eMeasure:
+      if (isStill() == false)
+      {
+        myReleaseState     = ERelease::eSettle;
+        myReleaseStateTime = millis();
+        break;
+      }
+
+      if (myReleaseState == ERelease::eSettle && millis()-myReleaseStateTime >= cStillDuration)
+      {
+        myReleaseState     = ERelease::eMeasure;
+        myReleaseStateTime = millis();
+        myCenter.reset();
+      }
+
+      if (myReleaseState == ERelease::eMeasure)
+      {
+        myCenter.add(myJoy);
+        if (millis()-myReleaseStateTime >= cMeasureDuration)
+        {
+          const std::array<int, 2> rest = myCenter.center();
+          for (size_t i=0; i<2; i++)
+            myRestSum[i] += rest[i];
+
+          myReleaseState     = ERelease::eDone;
+          myReleaseStateTime = millis();
+          sound().play(sound().signal());
+
+          Serial << "Joystick: release " << (myRelease + 1) << " of " << cNumReleases
+                 << " at rest " << rest[0] << " " << rest[1] << endl;
+        }
+      }
+      break;
+
+    case ERelease::eDone:
+      if (millis()-myReleaseStateTime >= cDoneDuration)
+      {
+        if (++myRelease < cNumReleases)
+          myReleaseState = ERelease::ePush;
+        else
+          startMinMax();
+      }
+      break;
   }
 }
 
 // ----------------------------------------------------------------------------------------
-void JoystickCalibration::drawArrow(int direction, bool pushed)
+bool JoystickCalibration::isStill()
 {
+  std::array<int, 2> raw;
+  bool still = true;
+
+  for (size_t i=0; i<2; i++)
+  {
+    raw[i] = myJoy.readRaw(i);
+    myStillMin[i] = min(myStillMin[i], raw[i]);
+    myStillMax[i] = max(myStillMax[i], raw[i]);
+    if (myStillMax[i] - myStillMin[i] > cStillCounts)
+      still = false;
+  }
+
+  if (still == false)
+    myStillMin = myStillMax = raw;
+
+  return still;
+}
+
+// ----------------------------------------------------------------------------------------
+void JoystickCalibration::startMinMax()
+{
+  // Rounded average of the rest positions
+  std::array<int, 2> center;
+  for (size_t i=0; i<2; i++)
+    center[i] = int((myRestSum[i] + cNumReleases/2) / cNumReleases);
+
+  myRange = RangeTracker<2>(center);
+
+  myCenterCalibrationIsActive = false;
+  myMinMaxCalibrationIsActive = true;
+  myStopCalibration           = false;   // a press during the releases does not end this phase
+  myCalibrationStartTime      = millis();
+}
+
+// ----------------------------------------------------------------------------------------
+void JoystickCalibration::drawStick()
+{
+  const ReleaseStep& current = cReleaseSteps[myRelease];
   const int cx = canvas().getWidth()/2;
-  const int cy = 126;
+  const int cy = cStickY;
+  const bool done = (myReleaseState == ERelease::eDone);
 
-  // Pointing up, relative to the center: shaft and head, 64 pixels long
-  const int shape[7][2] = { {-8, 32}, {-8, -4}, {-20, -4}, {0, -32}, {20, -4}, {8, -4}, {8, 32} };
-
-  // Turned by 90 degrees clockwise per direction
-  Point p[7];
-  for (int i=0; i<7; i++)
+  const char* word  = "push";
+  RGB888      color = Color::BrightWhite;
+  switch (myReleaseState)
   {
-    int x = shape[i][0];
-    int y = shape[i][1];
-    for (int r=0; r<direction; r++)
-    {
-      const int t = x;
-      x = -y;
-      y = t;
-    }
-    p[i] = Point(cx + x, cy + y);
+    case ERelease::ePush:    word = "push";       color = Color::BrightWhite; break;
+    case ERelease::eLetGo:   word = "let go";     color = cLetGoCol;          break;
+    case ERelease::eSettle:
+    case ERelease::eMeasure: word = "hold still"; color = cHoldStillCol;      break;
+    case ERelease::eDone:    word = "done";       color = cConfirmCol;        break;
   }
 
-  if (pushed == true)
+  // Circle, with its center while the stick is still to be released
+  canvas().setPenWidth(1);
+  canvas().setPenColor(cDefaultCol);
+  canvas().drawEllipse(cx, cy, 2*cStickR, 2*cStickR);
+  if (done == false)
   {
-    canvas().setBrushColor(cConfirmCol);
-    canvas().fillPath(p, 7);
+    canvas().setBrushColor(cDefaultCol);
+    canvas().fillEllipse(cx, cy, 5, 5);
+  }
 
-    // Tick right of the arrow
-    canvas().setPenColor(cConfirmCol);
-    canvas().setPenWidth(2);
-    canvas().drawLine(cx + 48, cy,     cx + 56, cy + 9);
-    canvas().drawLine(cx + 56, cy + 9, cx + 72, cy - 12);
+  if (done == true)
+  {
+    // Check mark; round line ends close the gap where the two strokes meet
+    canvas().setPenColor(color);
+    canvas().setPenWidth(5);
+    canvas().setLineEnds(LineEnds::Circle);
+    canvas().drawLine(cx - 16, cy + 1,  cx - 6,  cy + 11);
+    canvas().drawLine(cx - 6,  cy + 11, cx + 16, cy - 12);
+    canvas().setLineEnds(LineEnds::None);
+    canvas().setPenWidth(1);
   }
   else
   {
-    canvas().setPenColor(cDefaultCol);
-    canvas().drawPath(p, 7);
+    // Arrow in the step's direction: drawn pointing up, relative to the center, then turned
+    const int shape[7][2] = { {-3, -10}, {-3, -38}, {-9, -38}, {0, -52}, {9, -38}, {3, -38}, {3, -10} };
+
+    Point p[7];
+    for (int i=0; i<7; i++)
+      p[i] = turned(shape[i][0], shape[i][1], current.axis, current.sign, cx, cy);
+
+    canvas().setBrushColor(color);
+    canvas().fillPath(p, 7);
+
+    // Where the stick is, with a black ring so that it stands out on the arrow
+    const int dx = cx + myJoy.getX() * cStickTravel / cMAX;
+    const int dy = cy - myJoy.getY() * cStickTravel / cMAX;
+    canvas().setBrushColor(Color::Black);
+    canvas().fillEllipse(dx, dy, 2*cStickDotR + 4, 2*cStickDotR + 4);
+    canvas().setBrushColor(Color::BrightWhite);
+    canvas().fillEllipse(dx, dy, 2*cStickDotR, 2*cStickDotR);
+  }
+
+  // The state in words
+  canvas().selectFont(&fabgl::FONT_std_16);
+  canvas().setPenColor(color);
+  drawCenteredText(cStatusY, word);
+  canvas().setPenColor(cDefaultCol);
+
+  // One dot per release, filled once it is measured
+  for (int i=0; i<cNumReleases; i++)
+  {
+    const int x = cx + (2*i - (cNumReleases-1)) * 11;
+    if (i < myRelease || (i == myRelease && done == true))
+    {
+      canvas().setBrushColor(cConfirmCol);
+      canvas().fillEllipse(x, cProgressY, 11, 11);
+    }
+    else
+    {
+      canvas().drawEllipse(x, cProgressY, 11, 11);
+    }
+  }
+}
+
+// ----------------------------------------------------------------------------------------
+void JoystickCalibration::drawRange(bool result)
+{
+  const int cx = canvas().getWidth()/2;
+  const int cy = cStickY;
+  const RangeTracker<2>& r = myRange;
+
+  // Share of the way to each edge covered so far
+  float share[4];
+  for (int i=0; i<4; i++)
+    share[i] = reach(r, cEdges[i]);
+  const int reached = edgesReached(r);
+
+  // Range covered so far: a quarter ellipse between each two neighbouring edges
+  Point shape[4*cRangePoints];
+  for (int q=0; q<4; q++)
+  {
+    const float rx = share[(q == 1 || q == 2) ? 2 : 0] * (cRangeR - 1);
+    const float ry = share[(q < 2) ? 1 : 3] * (cRangeR - 1);
+    for (int k=0; k<cRangePoints; k++)
+    {
+      const float a = (q*cRangePoints + k) * (HALF_PI / cRangePoints);
+      shape[q*cRangePoints + k] = Point(cx + lroundf(cosf(a) * rx), cy - lroundf(sinf(a) * ry));
+    }
   }
 
   canvas().setPenWidth(1);
+  canvas().setBrushColor(cRangeCol);
+  canvas().fillPath(shape, 4*cRangePoints);
+  canvas().setPenColor(cBarCol);
+  canvas().drawPath(shape, 4*cRangePoints);
+
+  // Circle and its center, as in the center calibration
   canvas().setPenColor(cDefaultCol);
+  canvas().drawEllipse(cx, cy, 2*cRangeR, 2*cRangeR);
+  canvas().setBrushColor(cDefaultCol);
+  canvas().fillEllipse(cx, cy, 5, 5);
+
+  // One marker per edge, pointing outwards: filled once reached. On the result the edges not
+  // reached are filled too, in their own color.
+  const int marker[3][2] = { {-6, -(cRangeR + 3)}, {0, -(cRangeR + 11)}, {6, -(cRangeR + 3)} };
+  for (int i=0; i<4; i++)
+  {
+    Point p[3];
+    for (int j=0; j<3; j++)
+      p[j] = turned(marker[j][0], marker[j][1], cEdges[i].axis, cEdges[i].sign, cx, cy);
+
+    const bool ok = (share[i] >= cEdgeReached);
+    if (ok == true || result == true)
+    {
+      const RGB888 color = (ok == true) ? cConfirmCol : cMissedCol;
+      canvas().setBrushColor(color);
+      canvas().setPenColor(color);
+      canvas().fillPath(p, 3);
+    }
+    else
+    {
+      canvas().setPenColor(cDefaultCol);
+    }
+    canvas().drawPath(p, 3);
+  }
+
+  // Where the stick is, kept inside the circle on the diagonals, with a black ring so that it
+  // stands out on the range
+  if (result == false)
+  {
+    float dx = travel(myJoy.readRaw(0), r.center(0));
+    float dy = travel(myJoy.readRaw(1), r.center(1));
+    const float len = sqrtf(dx*dx + dy*dy);
+    if (len > 1.0f)
+    {
+      dx /= len;
+      dy /= len;
+    }
+    const int px = cx + lroundf(dx * cRangeTravel);
+    const int py = cy - lroundf(dy * cRangeTravel);
+    canvas().setBrushColor(Color::Black);
+    canvas().fillEllipse(px, py, 2*cRangeDotR + 4, 2*cRangeDotR + 4);
+    canvas().setBrushColor(Color::BrightWhite);
+    canvas().fillEllipse(px, py, 2*cRangeDotR, 2*cRangeDotR);
+  }
+
+  // The edges reached in words
+  char count[16];
+  const char* word  = count;
+  RGB888      color = Color::BrightWhite;
+  if (result == true)
+  {
+    word  = "calibration not stored";
+    color = cMissedCol;
+  }
+  else if (reached == 4)
+  {
+    word  = "all edges - A finishes";
+    color = cConfirmCol;
+  }
+  else
+  {
+    snprintf(count, sizeof(count), "%d of 4 edges", reached);
+  }
+
+  canvas().selectFont(&fabgl::FONT_std_16);
+  canvas().setPenColor(color);
+  drawCenteredText(cStatusY, word);
+  canvas().setPenColor(cDefaultCol);
+}
+
+// ----------------------------------------------------------------------------------------
+void JoystickCalibration::drawTimeLeft(float fraction)
+{
+  const int x0 = canvas().getWidth()/2 - cTimeBarHalf;
+  const int w  = lroundf((2*cTimeBarHalf - 3) * constrain(fraction, 0.0f, 1.0f));
+
+  canvas().setPenWidth(1);
+  canvas().setPenColor(cDefaultCol);
+  canvas().drawRectangle(x0, cTimeBarY - 4, x0 + 2*cTimeBarHalf, cTimeBarY + 4);
+  if (w > 0)
+  {
+    canvas().setBrushColor(cBarCol);
+    canvas().fillRectangle(x0 + 2, cTimeBarY - 2, x0 + 1 + w, cTimeBarY + 2);
+  }
 }
 
 // ----------------------------------------------------------------------------------------
 void JoystickCalibration::start()
 {
-  myCenter.reset();
-  
   myCenterCalibrationIsActive   = true;
   myRelease                     = 0;
-  myPushed                      = false;
-  mySamplingIsActive            = false;
+  myReleaseState                = ERelease::ePush;
+  myRestSum.fill(0);
   myMinMaxCalibrationIsActive   = false;
   myStopCalibration             = false;
   myResultIsActive              = false;
