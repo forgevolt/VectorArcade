@@ -11,4 +11,4 @@
 // names the build. The timestamp is taken when VectorArcade.ino is compiled, so after a
 // build that recompiled only other files it can be older than the firmware.
 
-#define VECTORARCADE_VERSION "0.9.0"
+#define VECTORARCADE_VERSION "1.0.0"
