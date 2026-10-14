@@ -30,6 +30,17 @@ void IMUCalibration::step(unsigned long dt)
   if (isActive() == false)
     return;
 
+  // Read the buttons on every step, so that no press is left over for the menu. Sel leaves
+  // during the wait, before anything is measured: the stored offsets stay as they are.
+  InputController::State s = myMenu.input().getState();
+
+  if (s.sel == true && myIsCalibrationWaitPeriodActive == true)
+  {
+    sound().play(sound().click());
+    setState(eNotActive);
+    return;
+  }
+
   // Has the wait time before the calibration already expired?
   if (myIsCalibrationWaitPeriodActive == true && millis()-myCalibrationStartTime > cWaitDuration)
   {

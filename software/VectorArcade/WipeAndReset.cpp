@@ -24,8 +24,18 @@ void WipeAndReset::step(unsigned long dt)
   // ---- Process input events
   InputController::State s = myMenu.input().getState();
 
+  // Sel leaves without changing anything
+  if (s.sel == true)
+  {
+    sound().play(sound().click());
+    setState(eNotActive);
+    return;
+  }
+
   if (s.a == true)
   {
+    sound().play(sound().click());
+
     if (myIsYesSelected == true)
     {
       nvs_flash_erase(); // erase the NVS partition and...
