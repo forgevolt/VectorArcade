@@ -51,6 +51,9 @@ constexpr float cEagle[] = {
    1.080,  1.013,  0.837, 1.013
 };
 
+// Abort maneuver: the lander turns upright at this rate (degrees/second) before full thrust
+constexpr float cAbortRotation = 250.0f;
+
 } // namespace
 
 
@@ -103,13 +106,15 @@ void Eagle::step(unsigned long dt)
 
   if (myAbortInProgress == true)
   {
+    const float rotation = cAbortRotation * dt / 1000.0f;
+
     if (myAngle > 0)
     {
-      setAngle(max(0.0f, myAngle-10));
+      setAngle(max(0.0f, myAngle-rotation));
     }
     else if (myAngle < 0)
     {
-      setAngle(min(0.0f, myAngle+10));
+      setAngle(min(0.0f, myAngle+rotation));
     }
     else 
     {

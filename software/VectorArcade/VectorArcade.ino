@@ -204,12 +204,20 @@ void setup()
 //----------------------------------------------------------------------------------------------
 void loop()
 {
-  // Animation steps: at most "targetFPS" frames per second are rendered
+  // Animation steps: at most "targetFPS" frames per second are rendered. Each step advances
+  // the games by the time that has really passed since the previous one, so they run at the
+  // same speed whether or not the console reaches targetFPS. A step is limited to cMaxDt, so
+  // that a long pause (e.g. a blocking calibration) does not make objects jump.
   const unsigned long targetFPS = 25;
-  const unsigned long dt = 1000 / targetFPS;
+  const unsigned long frameTime = 1000 / targetFPS;  // ms
+  const unsigned long cMaxDt    = 50;                // ms
 
   int64_t t0, t1; // To compute the rendering time of one frame
   int delayMS;    // and to delay if we are too fast
+
+  // Time of the last step (us). It advances by whole milliseconds, so the fraction of a
+  // millisecond that dt drops is carried over to the next step instead of being lost.
+  int64_t lastStep = esp_timer_get_time();
 
   while (true)
   {
@@ -231,6 +239,17 @@ void loop()
 
     t0 = esp_timer_get_time();  // us
 
+    unsigned long dt = static_cast<unsigned long>((t0 - lastStep) / 1000);  // ms
+    if (dt > cMaxDt)
+    {
+      dt = cMaxDt;
+      lastStep = t0;
+    }
+    else
+    {
+      lastStep += static_cast<int64_t>(dt) * 1000;
+    }
+
     m.step(dt);
     m.draw();
     
@@ -246,7 +265,7 @@ void loop()
     canvas.swapBuffers();
 
     t1 = esp_timer_get_time();  // us
-    delayMS = (dt - (t1 - t0) / 1000);
+    delayMS = (frameTime - (t1 - t0) / 1000);
     if (delayMS > 0)
       vTaskDelay(delayMS / portTICK_PERIOD_MS);
   }

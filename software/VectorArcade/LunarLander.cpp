@@ -158,8 +158,8 @@ void LunarLander::draw()
       case eSelectMode:
         drawSelectMode();
         break;
-
 #endif
+
       case eSelectFuelAndStart:
         drawSelectFuelAndStart();
         break;

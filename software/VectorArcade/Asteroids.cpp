@@ -90,7 +90,7 @@ namespace
 constexpr int cMaxLargeAsteroids = 10;
 constexpr int cMaxShots = 10;
 constexpr unsigned long cWaitTime = 5000; // Wait 5sec after ship got hit
-constexpr float cMaxRotation  = 10.0f;    // Ship rotation in degrees per frame at full joystick deflection
+constexpr float cMaxRotation  = 250.0f;   // Ship rotation in degrees per second at full joystick deflection
 constexpr float cRotationExpo = 0.7f;     // Rotation curve: 0 = linear, 1 = cubic (finer control around the center)
 
 } // namespace
@@ -517,12 +517,12 @@ void Asteroids::stepRunning(unsigned long dt)
 
   // Expo curve: blend of linear and cubic response for fine control around the center
   float n = constrain(abs(myInput.x) / (float)joystickutilities::cMAX, 0.0f, 1.0f);
-  float angle = cMaxRotation * ((1.0f - cRotationExpo) * n + cRotationExpo * n * n * n);
+  float angle = cMaxRotation * (dt / 1000.0f) * ((1.0f - cRotationExpo) * n + cRotationExpo * n * n * n);
   if (myInput.x < 0) angle *= -1;
   myShip.changeAngle(angle);
 
   // Linear mapping
-  // myShip.changeAngle(mapf(myInput.x, joystickutilities::cMIN, joystickutilities::cMAX, -10, 10));
+  // myShip.changeAngle(mapf(myInput.x, joystickutilities::cMIN, joystickutilities::cMAX, -cMaxRotation, cMaxRotation) * (dt / 1000.0f));
 
   // ---- Apply Thrust
 
@@ -576,7 +576,7 @@ void Asteroids::stepLevelCleared(unsigned long dt)
 
   // ---- Rotating the ship and applying thrust is possible while waiting for the new level
 
-  myShip.changeAngle(mapf(myInput.x, joystickutilities::cMIN, joystickutilities::cMAX, -10, 10));
+  myShip.changeAngle(mapf(myInput.x, joystickutilities::cMIN, joystickutilities::cMAX, -cMaxRotation, cMaxRotation) * (dt / 1000.0f));
   myShip.thrust(myInput.bIsPressed);
 
   for (auto& s : myShots) s->step(dt);

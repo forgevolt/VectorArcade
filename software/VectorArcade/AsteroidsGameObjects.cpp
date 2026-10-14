@@ -85,9 +85,9 @@ constexpr ShipShape cShip = {
 };
 
 
-constexpr float cShipMaxVelocity  = 150;  // max speed m/sec (actually pixels/second)
-constexpr float cShipAcceleration = 5;    // acceleration m/sec^2 
-constexpr float cDampeningFactor  = 0.98; // ship slows down when thruster is not active
+constexpr float cShipMaxVelocity  = 150;     // max speed in pixels/second
+constexpr float cShipAcceleration = 125;     // pixels/second^2 while the thruster is on
+constexpr float cShipDamping      = 0.6035f; // velocity factor per second without thrust (0.98 per 40 ms)
 
 } // namespace
 
@@ -154,7 +154,7 @@ void Ship::step(unsigned long dt)
     {
       // Calculate change of velocity
       Vector2 acceleration(sinf(myAngleRad) * cShipAcceleration, -cosf(myAngleRad) * cShipAcceleration);
-      myVelocity += acceleration;
+      myVelocity += acceleration * (dt / 1000.0f);
 
       // Limit velocity of the ship to cShipMaxVelocity
       float v    = myVelocity.length();
@@ -167,7 +167,7 @@ void Ship::step(unsigned long dt)
     else 
     {
       // Slow down
-      myVelocity = myVelocity * cDampeningFactor;
+      myVelocity = myVelocity * powf(cShipDamping, dt / 1000.0f);
     }
 
     myPos += myVelocity * dt / 1000.0f;
