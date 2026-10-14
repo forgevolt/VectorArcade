@@ -1,6 +1,7 @@
 #pragma once
 
 #include "MenuItem.h"
+#include "MenuContainer.h"
 
 // ---- MenuPage --------------------------------------------------------------------------
 // Class MenuPage adds another menu level, e.g. with two levels:
@@ -14,7 +15,7 @@ class MenuPage : public MenuItem
 {
   public:
     MenuPage(Menu& menu, const String& name);
-    virtual ~MenuPage();
+    ~MenuPage() override {}
 
     // From class DisplayObject
     void step(unsigned long dt) override;
@@ -26,9 +27,7 @@ class MenuPage : public MenuItem
     // Add a MenuItem object to the page. Note that this object is "adopted" 
     // i.e. it is deleted by the dtor of class MenuPage.
     void add(MenuItem* adoptMenuItem);
-    void setActiveItem(int num);
 
   private:
-    std::vector<MenuItem*> myMenuItems;
-    int myActiveItem;    
+    MenuContainer myItems;
 };

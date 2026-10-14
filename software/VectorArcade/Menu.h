@@ -5,6 +5,7 @@
 
 #include "DisplayObject.h"
 #include "InputController.h"
+#include "MenuContainer.h"
 #include <SoundEngine.h>
 
 
@@ -51,15 +52,10 @@ class Menu
     fabgl::Canvas&   canvas() { return myCanvas; }
 
   private:
-    void setActiveItem(int num);
-
-  private:
     fabgl::Canvas&  myCanvas;
     SoundEngine     mySound;
     InputController myInput;
-
-    std::vector<MenuItem*> myMenuItems;
-    int myActiveItem;
+    MenuContainer   myItems;
 
     std::vector<DisplayObject*> myObjects;
 };

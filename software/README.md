@@ -11,7 +11,7 @@
 | Files | Responsibility |
 | --- | --- |
 | `VectorArcade.ino` | setup of display, fuel gauge, IMU, filesystem and menu; the 25 FPS loop |
-| `Menu.*`, `MenuItem.*`, `MenuPage.*` | the main menu, its entries and the configuration page |
+| `Menu.*`, `MenuItem.*`, `MenuPage.*`, `MenuContainer.*` | the main menu, its entries and the configuration page; `MenuContainer` holds the list both menu levels share |
 | `DisplayObject.*` | base class of everything on screen, text and instruction helpers |
 | `InputController.*` | the buttons, debounced in their own task, and the joystick (JoystickUtilities) |
 | `LunarLander.*`, `Eagle.*`, `LunarSurface.*`, `Camera.h`, `LunarLanderSounds.h` | Lunar Lander: game states, the lander, the endless surface, the scrolling and zooming view |
