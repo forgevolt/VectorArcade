@@ -76,8 +76,10 @@ void WipeAndReset::draw()
     drawCenteredText(80, "Reset to default");
     drawCenteredText(110, "settings?");
 
-    drawButton(30,  180, 60, "Yes", myIsYesSelected);
-    drawButton(canvas().getWidth()-30-60, 180, 60, "No",  !myIsYesSelected);
+    // Two 60 pixel buttons, 60 pixels apart, centered
+    const int x = canvas().getWidth()/2;
+    drawButton(x-90, 180, 60, "Yes", myIsYesSelected);
+    drawButton(x+30, 180, 60, "No",  !myIsYesSelected);
   }
 }
 
