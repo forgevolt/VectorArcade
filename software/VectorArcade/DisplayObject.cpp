@@ -185,8 +185,6 @@ void DisplayObject::drawInstructions(const String& sel, const String& start,
 // ----------------------------------------------------------------------------------------
 void DisplayObject::drawButton(int x, int y, int length, const String& text, bool isActive)
 {
-  myCanvas.setPenWidth(2);
-  myCanvas.setLineEnds(LineEnds::None);
   myCanvas.setPenColor(cDefaultCol);
   drawFrame(x-1, y-16, x+length, y+17);
 
@@ -201,6 +199,16 @@ void DisplayObject::drawButton(int x, int y, int length, const String& text, boo
   myCanvas.selectFont(&fabgl::FONT_std_24);
   int extent = myCanvas.textExtent(text.c_str());
   myCanvas.drawText(x+length/2 - extent/2, y-10, text.c_str());  
+}
+
+// ----------------------------------------------------------------------------------------
+void DisplayObject::drawHeader(int y, const String& title)
+{
+  myCanvas.setGlyphOptions(GlyphOptions().FillBackground(false));
+  myCanvas.setPenColor(cDefaultCol);
+  myCanvas.setPenWidth(1);
+  drawCenteredText(y, title, &fabgl::FONT_std_24);
+  myCanvas.drawLine(0, y + 30, myCanvas.getWidth(), y + 30);
 }
 
 // ----------------------------------------------------------------------------------------

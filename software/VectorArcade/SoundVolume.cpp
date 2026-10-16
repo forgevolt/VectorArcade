@@ -59,20 +59,12 @@ void SoundVolume::draw()
     canvas().setBrushColor(Color::Black);
     canvas().clear();
 
-    canvas().setGlyphOptions(GlyphOptions().FillBackground(false));
-    canvas().setPenColor(cDefaultCol);
-    canvas().selectFont(&fabgl::FONT_std_24);
-
-    drawCenteredText(30, cMenuName);
-    canvas().drawLine(0, 60, canvas().getWidth(), 60);
+    drawHeader(30, cMenuName);
     drawCenteredText(80, "Move joystick left/right");
     drawCenteredText(110, "to change volume.");
     drawCenteredText(150, "Press button to exit.");
 
     // Visualize sound volume with a "progress bar" 
-    canvas().setPenWidth(2);
-    canvas().setLineEnds(LineEnds::None);
-    canvas().setPenColor(cDefaultCol);
     drawFrame(29, 200-10, canvas().getWidth()-30, 200+11);
     canvas().setBrushColor(cBarCol);
     canvas().fillRectangle(33, 200-6, 33+float(canvas().getWidth()-66)/200.0f*sound().getVolume(), 200+7);

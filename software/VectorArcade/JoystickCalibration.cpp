@@ -220,13 +220,7 @@ void JoystickCalibration::draw()
   canvas().setBrushColor(Color::Black);
   canvas().clear();
 
-  canvas().setGlyphOptions(GlyphOptions().FillBackground(false));
-  canvas().setPenColor(cDefaultCol);
-  canvas().selectFont(&fabgl::FONT_std_24);
-
-  drawCenteredText(30, myCenterCalibrationIsActive ? "Center Calibration" : "Min/Max Calibration");
-  canvas().setPenColor(cDefaultCol);
-  canvas().drawLine(0, 60, canvas().getWidth(), 60);
+  drawHeader(30, myCenterCalibrationIsActive ? "Center Calibration" : "Min/Max Calibration");
 
   if (myCenterCalibrationIsActive == true)
   {

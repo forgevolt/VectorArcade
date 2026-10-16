@@ -645,12 +645,7 @@ void Asteroids::drawSplashScreen()
 {
   if (myShowInstructions == true)
   {
-    canvas().setGlyphOptions(GlyphOptions().FillBackground(false));
-    canvas().setPenColor(cDefaultCol);
-    canvas().selectFont(&fabgl::FONT_std_24);
-
-    drawCenteredText(10, myMenuName);
-    canvas().drawLine(0, 40, canvas().getWidth(), 40);
+    drawHeader(10, myMenuName);
     drawCenteredText(55, "Press 'Start' to play");
 
     drawInstructions("Quit Game", BOARD_HAS_AUX_BUTTON() ? "Start" : "Hyperspace", "Fire", "Thrust", "Hyperspace", &fabgl::FONT_std_16);

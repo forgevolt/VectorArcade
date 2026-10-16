@@ -640,12 +640,7 @@ void LunarLander::stepGameOver(unsigned long dt)
 // ----------------------------------------------------------------------------------------
 void LunarLander::drawSelectMode()
 {
-  canvas().setGlyphOptions(GlyphOptions().FillBackground(false));
-  canvas().setPenColor(cDefaultCol);
-  canvas().selectFont(&fabgl::FONT_std_24);
-
-  drawCenteredText(10, myMenuName);
-  canvas().drawLine(0, 40, canvas().getWidth(), 40);
+  drawHeader(10, myMenuName);
   drawCenteredText(50, "Select mode");
 
   drawButton(30,  180, 60, "Gyro", !myIsJoystickMode);
@@ -660,12 +655,7 @@ void LunarLander::drawSelectMode()
 // ----------------------------------------------------------------------------------------
 void LunarLander::drawSelectFuelAndStart()
 {
-  canvas().setGlyphOptions(GlyphOptions().FillBackground(false));
-  canvas().setPenColor(cDefaultCol);
-  canvas().selectFont(&fabgl::FONT_std_24);
-
-  drawCenteredText(10, myMenuName);
-  canvas().drawLine(0, 40, canvas().getWidth(), 40);
+  drawHeader(10, myMenuName);
   drawCenteredText(60, "Add fuel by");
   drawCenteredText(90, "pressing button 'A'");
   drawCenteredText(120, "and 'Start' to play");
@@ -804,12 +794,7 @@ void LunarLander::drawGameOver()
 {
   if (myShowInstructions == true)
   {
-    canvas().setGlyphOptions(GlyphOptions().FillBackground(false));
-    canvas().setPenColor(cDefaultCol);
-    canvas().selectFont(&fabgl::FONT_std_24);
-
-    drawCenteredText(10, myMenuName);
-    canvas().drawLine(0, 40, canvas().getWidth(), 40);
+    drawHeader(10, myMenuName);
     drawCenteredText(55, "Press a button to start");
 
     drawInstructions("Quit Game", BOARD_HAS_AUX_BUTTON() ? "Start" : "Abort Landing", "Rotate Left", "Rotate Right", "Abort Landing", &fabgl::FONT_std_16);

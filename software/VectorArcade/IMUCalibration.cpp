@@ -67,12 +67,7 @@ void IMUCalibration::draw()
     canvas().setBrushColor(Color::Black);
     canvas().clear();
 
-    canvas().setGlyphOptions(GlyphOptions().FillBackground(false));
-    canvas().setPenColor(cDefaultCol);
-    canvas().selectFont(&fabgl::FONT_std_24);
-
-    drawCenteredText(30, cMenuName);
-    canvas().drawLine(0, 60, canvas().getWidth(), 60);
+    drawHeader(30, cMenuName);
     drawCenteredText(80, "Place rocket on a");
     drawCenteredText(110, "flat surface!");
 

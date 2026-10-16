@@ -42,6 +42,10 @@ class DisplayObject
                           fabgl::FontInfo const * fontInfo = nullptr);
     void drawButton(int x, int y, int length, const String& text, bool isActive);
 
+    // Screen title in FONT_std_24, centered, at 'y', with a line one pixel wide across the
+    // screen 30 pixels below. Leaves FONT_std_24, cDefaultCol and pen width 1 selected.
+    void drawHeader(int y, const String& title);
+
     // A frame two pixels wide in cDefaultCol, outer edge (x1, y1) - (x2, y2). Drawn as four
     // filled bars: drawRectangle() with pen width 2 leaves a notch at every corner.
     void drawFrame(int x1, int y1, int x2, int y2);
