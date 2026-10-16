@@ -42,6 +42,10 @@ class DisplayObject
                           fabgl::FontInfo const * fontInfo = nullptr);
     void drawButton(int x, int y, int length, const String& text, bool isActive);
 
+    // A frame two pixels wide in cDefaultCol, outer edge (x1, y1) - (x2, y2). Drawn as four
+    // filled bars: drawRectangle() with pen width 2 leaves a notch at every corner.
+    void drawFrame(int x1, int y1, int x2, int y2);
+
   protected:
     EState myState;
     fabgl::Canvas& myCanvas;

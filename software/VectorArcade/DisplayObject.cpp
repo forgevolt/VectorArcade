@@ -188,7 +188,7 @@ void DisplayObject::drawButton(int x, int y, int length, const String& text, boo
   myCanvas.setPenWidth(2);
   myCanvas.setLineEnds(LineEnds::None);
   myCanvas.setPenColor(cDefaultCol);
-  myCanvas.drawRectangle(x, y-16, x+length, y+16);
+  drawFrame(x-1, y-16, x+length, y+17);
 
   if (isActive == true)
   {
@@ -201,4 +201,14 @@ void DisplayObject::drawButton(int x, int y, int length, const String& text, boo
   myCanvas.selectFont(&fabgl::FONT_std_24);
   int extent = myCanvas.textExtent(text.c_str());
   myCanvas.drawText(x+length/2 - extent/2, y-10, text.c_str());  
+}
+
+// ----------------------------------------------------------------------------------------
+void DisplayObject::drawFrame(int x1, int y1, int x2, int y2)
+{
+  myCanvas.setBrushColor(cDefaultCol);
+  myCanvas.fillRectangle(x1,     y1,     x2,     y1 + 1);   // top
+  myCanvas.fillRectangle(x1,     y2 - 1, x2,     y2);       // bottom
+  myCanvas.fillRectangle(x1,     y1,     x1 + 1, y2);       // left
+  myCanvas.fillRectangle(x2 - 1, y1,     x2,     y2);       // right
 }
