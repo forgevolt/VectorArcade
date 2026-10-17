@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Adafruit_MAX1704X.h"
+#include <SparkFun_MAX1704x_Fuel_Gauge_Arduino_Library.h>
 #include "DisplayObject.h"
 
 // ---- BatteryStatus ---------------------------------------------------------------------
@@ -9,7 +9,7 @@
 class BatteryStatus : public DisplayObject
 {
   public:
-    BatteryStatus(fabgl::Canvas& canvas, Adafruit_MAX17048& batteryMonitor);
+    BatteryStatus(fabgl::Canvas& canvas, SFE_MAX1704X& batteryMonitor);
     ~BatteryStatus() override {}
 
     // From class DisplayObject
@@ -21,7 +21,7 @@ class BatteryStatus : public DisplayObject
 
   private:
     // Reference to the MAX17048 I2C battery monitor
-    Adafruit_MAX17048& myFuelGauge;
+    SFE_MAX1704X& myFuelGauge;
 
     // Access the gauge every 30sec
     unsigned long myLastUpdate;

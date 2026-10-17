@@ -21,10 +21,10 @@
 
 // ---- Gauge
 
-#include "Adafruit_MAX1704X.h"
+#include <SparkFun_MAX1704x_Fuel_Gauge_Arduino_Library.h>
 #include "BatteryStatus.h"
 
-Adafruit_MAX17048 fuelGauge;
+SFE_MAX1704X fuelGauge(MAX1704X_MAX17048);
 
 // ---- Display
 
@@ -128,9 +128,17 @@ void setup()
 
   // ---- Gauge 
 
+  // The gauge is powered from the battery and keeps tracking the charge while the console is
+  // off, so it is not reset here: a reset would restart the estimate from the present voltage,
+  // which reads far too high while charging. The gauge resets itself only when it gets power,
+  // e.g. when a battery is connected.
   if (fuelGauge.begin() == false) 
   {
     Serial << "Couldn't find MAX17048\nMake sure a battery is plugged in!" << endl;
+  }
+  else if (fuelGauge.isReset(true) == true)
+  {
+    Serial << "MAX17048: power-on reset, charge estimated from the present voltage" << endl;
   }
   delay(500);
   // fuelGauge.quickStart();

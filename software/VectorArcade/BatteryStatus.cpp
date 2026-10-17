@@ -19,7 +19,7 @@ const int cTermHeight = Layout::cBatteryTerminalHalfHeight;
 } // namespace
 
 // ----------------------------------------------------------------------------------------
-BatteryStatus::BatteryStatus(fabgl::Canvas& canvas, Adafruit_MAX17048& batteryMonitor)
+BatteryStatus::BatteryStatus(fabgl::Canvas& canvas, SFE_MAX1704X& batteryMonitor)
 : DisplayObject(canvas),
   myFuelGauge(batteryMonitor),
   myLastUpdate(millis()),
@@ -41,7 +41,7 @@ void BatteryStatus::step(unsigned long dt)
   if ((millis() - myLastUpdate) > 30000 || myCellPercent < 0)
   { 
     myLastUpdate = millis();
-    myCellPercent = myFuelGauge.cellPercent();
+    myCellPercent = myFuelGauge.getSOC();
   }
 
   myIsCharging = isCharging();

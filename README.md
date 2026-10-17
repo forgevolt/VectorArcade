@@ -143,8 +143,7 @@ against:
 | [JoystickUtilities](https://github.com/forgevolt/JoystickUtilities) | 1.0.0 | reading, calibrating and storing the joystick |
 | Bounce2 | 2.71 | button debouncing |
 | Streaming | 6.3.0 | the `Serial <<` logging |
-| Adafruit MAX1704X | 1.0.3 | the fuel gauge |
-| Adafruit BusIO | 1.17.4 | installed with Adafruit MAX1704X |
+| SparkFun MAX1704x Fuel Gauge Arduino Library | 1.0.4 | the fuel gauge; unlike Adafruit MAX1704X it does not reset the gauge in `begin()` |
 | MPU6050_light | 1.2.1 | by rfetick - the IMU of the TintinRocketShooter; several MPU6050 libraries exist, this is the one used here |
 
 LittleFS, Wire, SPI and Preferences come with the core.

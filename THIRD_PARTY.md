@@ -13,8 +13,7 @@ through the Arduino library manager or comes with the esp32 core, and keeps its 
 | JoystickUtilities | MIT | reading, calibrating and storing the joystick |
 | Bounce2 | MIT | button debouncing |
 | Streaming | LGPL-2.1-or-later | the `Serial <<` logging |
-| Adafruit MAX1704X | BSD | the battery fuel gauge |
-| Adafruit BusIO | MIT | I2C access for the fuel gauge library |
+| SparkFun MAX1704x Fuel Gauge Arduino Library | MIT | the battery fuel gauge |
 | MPU6050_light | MIT | the IMU of the TintinRocketShooter |
 | esp32 core 2.0.17 | LGPL-2.1 (Arduino core), Apache-2.0 (ESP-IDF) | the platform, including LittleFS, Wire, SPI and Preferences |
 
