@@ -32,7 +32,7 @@ From the schematics, the parts worth naming:
 | USB to serial, for flashing and the Serial Monitor | CP2102N | CP2102N |
 | ESD protection of the USB lines | USBLC6-2SC6 | USBLC6-2SC6 |
 | Li-ion charger | MCP73831 | MCP73831 |
-| 3.3 V regulator | LD39200PUR, 2 A LDO | NCP167BMX330TBG, LDO |
+| 3.3 V regulator | LD39200, 2 A LDO (fixed 3.3 V version, see item 14) | NCP167BMX330TBG, LDO |
 | Battery fuel gauge | MAX17048 | MAX17048 |
 | I2S class-D amplifier | MAX98357A | MAX98357A |
 
@@ -97,9 +97,10 @@ uses the default order would not depend on that.
    battery while charging, from two signals: USB present, and the charger's STAT output.
    The LittleGameConsole has neither - its GPIO 25 and 26 are buttons. A revision needs two
    free pins, the analog one on ADC1 (GPIO 32 to 39). The firmware is ready: add the pins to
-   `PinMap.h` and set `BOARD_HAS_CHARGE_SENSE()` to 1 in `Board.h`. Whether the MAX17048's
-   own charge-rate reading can replace this without a hardware change is still being
-   tested.
+   `PinMap.h` and set `BOARD_HAS_CHARGE_SENSE()` to 1 in `Board.h`. A firmware-only
+   alternative was tested and dropped: the MAX17048 sees plugging in as a voltage step, but
+   near full charge the step is too small to tell from the TintinRocketShooter's normal
+   voltage swings. Item 12 shows where the LittleGameConsole's USB-present signal already is.
 7. **Read all three states of STAT.** The MCP73831's STAT output is low while charging, high
    when charging is complete, and high-impedance with no input power or no battery. A
    digital input cannot tell high-impedance from high. Bias the sense node with two
@@ -107,8 +108,8 @@ uses the default order would not depend on that.
    add 100 nF to ground; one ADC reading then gives about 0.99 V (charging), 1.65 V
    (high-impedance) or 3.0 V (complete). The series resistor matters: the charger runs
    from USB, so STAT high is about 5 V, beyond the ESP32's 3.6 V maximum. Schematic:
-   [`STAT_TriState.svg`](STAT_TriState.svg). On the current TintinRocketShooter board,
-   check whether STAT already reaches GPIO 25 through a divider or series resistor.
+   [`STAT_TriState.svg`](STAT_TriState.svg). The TintinRocketShooter already brings STAT to
+   GPIO 25 through a 10 kΩ / 20 kΩ divider, which keeps "high" at 3.3 V.
 
 ![STAT three-state sense](STAT_TriState.svg)
 
@@ -133,3 +134,44 @@ uses the default order would not depend on that.
    potentiometers - and work with either choice. In the firmware, JoystickUtilities reads
    each axis through a replaceable read function (`ReadFunction`), so an external ADC needs
    only its own read function, chosen by a `Board.h` setting.
+
+### From tests and a schematic review (October 2026)
+
+10. **Charging stops early** (TintinRocketShooter). In a test the charger reported "complete"
+    at 86 to 90 %, and after replugging it stopped again within seconds. Two candidates:
+    Q400 fitted the wrong way round - its body diode must point from the battery (VBAT) to
+    VIN; reversed, VIN would charge the cell past the charger - or a worn cell. Check Q400
+    first.
+11. **CS of the display** (LittleGameConsole). R304, the 0 Ω link from GPIO 27 to the
+    display's CS, is not fitted, so CS floats. It works, but a floating input can drift: fit
+    R304, or pull CS to ground with about 10 kΩ.
+12. **USB present from the switchover** (LittleGameConsole). The LM66200's ST output reports
+    which input powers the board. It is pulled up by R401 to USB_P - 5 V - and goes nowhere.
+    Pulled up to 3.3 V instead and connected to a free input, it is the USB-present signal
+    of item 6. Check the polarity in the LM66200 datasheet.
+13. **Supply of the USB-to-serial chip.** On both boards the CP2102N runs from the switched
+    3.3 V rail, although the sheet says "bus-powered": flashing and the Serial Monitor work
+    only with the console switched on, and with the console off the VBUS divider (R200,
+    R201) puts about 3.4 V on a pin of the unpowered chip. Check this against the CP2102N
+    datasheet, or use the bus-powered configuration.
+14. **Regulator part number** (LittleGameConsole). "LD39200PUR" names the adjustable
+    LD39200; with its ADJ pin tied to the output that would give about 0.5 V. The board runs
+    at 3.3 V, so a fixed 3.3 V version is fitted - name it in the schematic, so a reorder
+    brings the right part.
+15. **Amplifier supply.** The MAX98357A runs from the 3.3 V rail on both boards. It accepts
+    2.5 to 5.5 V; fed from VIN it plays louder and keeps its current peaks off the rail of
+    the ESP32 and the display.
+16. **Backlight and GPIO 2** (see item 4). LittleGameConsole: check the display's backlight
+    current - a GPIO is good for about 20 mA - and drive it through a small MOSFET if
+    needed. TintinRocketShooter: GPIO 2 reaches the display's BLK pin through R700, but the
+    firmware never drives it; leave R700 out, so a pull-up on the display cannot block
+    flashing.
+17. **Battery polarity.** Neither board protects against a reversed battery, and JST LiPo
+    packs come with both polarities. Mark the polarity on the silkscreen, or add
+    reverse-polarity protection.
+18. **ESD protection for the joystick** (TintinRocketShooter, see *Known errors*). An ESD
+    array close to the joystick and series resistors of about 1 kΩ in the three joystick
+    lines.
+19. **Speaker output** (TintinRocketShooter). There is no output filter (the
+    LittleGameConsole has ferrites and 220 pF), and the on-board transducer is in parallel
+    with the external-speaker header. With both fitted, the load must stay at 4 Ω or more.
