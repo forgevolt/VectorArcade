@@ -32,6 +32,9 @@ class MenuContainer
     void stepRunningItem(unsigned long dt);
     void drawRunningItem();
 
+    // Ends the running item without its own exit; its start() sets it up afresh
+    void stopRunningItem();
+
     // Start, A or the joystick button starts the selected item, up/down move the selection.
     // Returns true if an item was started.
     bool navigate(const InputController::State& s);

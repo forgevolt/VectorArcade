@@ -15,6 +15,7 @@
 // entire game that is started from the menu.
 
 class MenuItem;
+class BatteryStatus;
 
 class Menu
 {
@@ -43,6 +44,10 @@ class Menu
     // This is used to add additional visual elements to the screen, such as a battery symbol
     void addObject(DisplayObject* adoptObject);
 
+    // Like addObject(), and the menu also watches the battery: when it is empty, a running
+    // game or screen is stopped and the "battery empty" screen shown until it is charged.
+    void addBatteryStatus(BatteryStatus* adoptBattery);
+
     // A MenuItem might want to step/draw the additional visual elements
     void stepObjects(unsigned long dt); 
     void drawObjects();
@@ -58,4 +63,5 @@ class Menu
     MenuContainer   myItems;
 
     std::vector<DisplayObject*> myObjects;
+    BatteryStatus*  myBattery = nullptr;  // one of myObjects
 };

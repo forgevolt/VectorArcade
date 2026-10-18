@@ -2,6 +2,7 @@
 
 #include "Menu.h"
 #include "MenuItem.h"
+#include "BatteryStatus.h"
 #include "PinMap.h"
 
 // ---- Menu ------------------------------------------------------------------------------
@@ -42,6 +43,23 @@ bool Menu::begin()
 // ----------------------------------------------------------------------------------------
 void Menu::step(unsigned long dt)
 {
+  // Empty battery: stop whatever runs and wait for the charger. Button presses are read and
+  // dropped, so none of them starts an item once the battery is charged again.
+  if (myBattery != nullptr)
+  {
+    myBattery->monitor();
+    if (myBattery->isEmpty() == true)
+    {
+      if (myItems.isItemRunning() == true)
+      {
+        mySound.stopAll();
+        myItems.stopRunningItem();
+      }
+      myInput.getState();
+      return;
+    }
+  }
+
   // Is the processing of a MenuItem in progress?
   if (myItems.isItemRunning() == true)
   {
@@ -59,6 +77,12 @@ void Menu::step(unsigned long dt)
 // ----------------------------------------------------------------------------------------
 void Menu::draw()
 {
+  if (myBattery != nullptr && myBattery->isEmpty() == true)
+  {
+    myBattery->drawEmpty();
+    return;
+  }
+
   // Processing of a MenuItem is in progress
   if (myItems.isItemRunning() == true)
   {
@@ -78,6 +102,13 @@ void Menu::draw()
 void Menu::addMenu(MenuItem* adoptMenuItem)
 {
   myItems.add(adoptMenuItem);
+}
+
+// ----------------------------------------------------------------------------------------
+void Menu::addBatteryStatus(BatteryStatus* adoptBattery)
+{
+  addObject(adoptBattery);
+  myBattery = adoptBattery;
 }
 
 // ----------------------------------------------------------------------------------------

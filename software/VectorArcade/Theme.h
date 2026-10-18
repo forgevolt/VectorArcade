@@ -22,7 +22,7 @@ const RGB888 cBattery80_100Col ( 71, 212, 90);
 const RGB888 cBattery60_80Col  (153, 217, 74);
 const RGB888 cBattery40_60Col  (255, 212,  5);
 const RGB888 cBattery20_40Col  (233, 113, 50);
-const RGB888 cBattery00_20Col  (144,   0,  0);
+const RGB888 cBattery00_20Col  (220,  30, 30);
 
 // ---- Lunar Lander
 const RGB888 cLandingZoneCol (210, 210, 210);  // Bonus landing zones and their labels

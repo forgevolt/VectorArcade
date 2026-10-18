@@ -31,7 +31,9 @@ housing is modelled on the moon rocket from the Tintin comics.
 - **Sound.** Seven clips mixed by [SoundEngine](https://github.com/forgevolt/SoundEngine),
   loaded from the flash filesystem into PSRAM at startup, or linked into the firmware for
   boards without PSRAM.
-- **Battery.** A MAX17048 fuel gauge drives the battery indicator in the menu.
+- **Battery.** A MAX17048 fuel gauge drives the battery indicator in the menu. Below 1 % its
+  last segment blinks; when the battery is empty, the console stops the game and asks to be
+  charged or switched off.
 - **Fixed frame rate.** The games run at a steady 25 frames per second.
 
 ## Controls

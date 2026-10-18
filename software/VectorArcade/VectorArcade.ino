@@ -202,7 +202,7 @@ void setup()
 
   fpsToggle = new FPSToggle(m);
   m.addMenu(fpsToggle);
-  m.addObject(new BatteryStatus(canvas, fuelGauge));
+  m.addBatteryStatus(new BatteryStatus(canvas, fuelGauge));
 #if BOARD_HAS_IMU()
   m.addObject(new IMUStatus(canvas, imu));
 #endif

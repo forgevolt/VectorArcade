@@ -73,6 +73,13 @@ void MenuContainer::drawRunningItem()
 }
 
 // ----------------------------------------------------------------------------------------
+void MenuContainer::stopRunningItem()
+{
+  if (isItemRunning() == true)
+    myItems[myActiveItem]->setState(DisplayObject::eNotActive);
+}
+
+// ----------------------------------------------------------------------------------------
 bool MenuContainer::navigate(const InputController::State& s)
 {
   if (myItems.empty() == true)

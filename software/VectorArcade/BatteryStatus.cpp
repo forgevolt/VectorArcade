@@ -16,13 +16,26 @@ const int cSegWidth   = Layout::cBatterySegmentWidth;
 const int cTermWidth  = Layout::cBatteryTerminalWidth;
 const int cTermHeight = Layout::cBatteryTerminalHalfHeight;
 
+// Thresholds from discharge tests: both consoles' gauges reach 0 % at about 3.3 V, after which
+// the cells were drawn far below 3.0 V. The gauge filters the voltage steps of a game, so its
+// 0 % is the main "empty" mark; the voltage is the safety net for a gauge that has just started
+// and estimated from the present voltage.
+const unsigned long cReadInterval    = 5000;   // ms between gauge readings
+const float         cLowPercent      = 1.0f;   // below this the last segment blinks
+const float         cEmptyPercent    = 0.05f;  // the gauge shows 0.0 %
+const float         cEmptyVoltage    = 3.20f;  // V, safety net
+const unsigned long cEmptyDuration   = 60000;  // ms the condition must hold
+const float         cRechargedPercent = 2.0f;  // leaves the "empty" screen
+const unsigned long cBlinkPeriod     = 500;    // ms on, ms off
+
 } // namespace
 
 // ----------------------------------------------------------------------------------------
 BatteryStatus::BatteryStatus(fabgl::Canvas& canvas, SFE_MAX1704X& batteryMonitor)
 : DisplayObject(canvas),
   myFuelGauge(batteryMonitor),
-  myLastUpdate(millis()),
+  myHasGauge(batteryMonitor.isConnected()),
+  myLastReading(0),
   myCellPercent(-1.0),
   myIsCharging(false)
 {
@@ -36,15 +49,46 @@ void BatteryStatus::step(unsigned long dt)
 {
   if (isActive() == false)
     return;
-      
-  // Update every 30sec
-  if ((millis() - myLastUpdate) > 30000 || myCellPercent < 0)
-  { 
-    myLastUpdate = millis();
-    myCellPercent = myFuelGauge.getSOC();
-  }
 
   myIsCharging = isCharging();
+}
+
+// ----------------------------------------------------------------------------------------
+void BatteryStatus::monitor()
+{
+  // Without a gauge every reading would be 0 and the console would stop as "empty"
+  if (myHasGauge == false)
+    return;
+
+  const unsigned long now = millis();
+  if (myCellPercent >= 0 && now - myLastReading < cReadInterval)
+    return;
+  myLastReading = now;
+
+  myCellPercent = myFuelGauge.getSOC();
+  const float voltage = myFuelGauge.getVoltage();
+
+  if (myIsEmpty == true)
+  {
+    if (myCellPercent >= cRechargedPercent)
+    {
+      myIsEmpty  = false;
+      myLowSince = 0;
+    }
+    return;
+  }
+
+  if (myCellPercent < cEmptyPercent || voltage < cEmptyVoltage)
+  {
+    if (myLowSince == 0)
+      myLowSince = now;
+    else if (now - myLowSince >= cEmptyDuration)
+      myIsEmpty = true;
+  }
+  else
+  {
+    myLowSince = 0;
+  }
 }
 
 // ----------------------------------------------------------------------------------------
@@ -96,14 +140,21 @@ void BatteryStatus::draw()
 
   // ---- Visualize charge percentage
 
-  canvas().setPenWidth(1);
-  canvas().setBrushColor(col);
-  canvas().fillRectangle(cPosX+3, cPosY+3, cPosX+numSeg*cSegWidth+1, cPosY-3+cHeight);
+  // Below cLowPercent the last segment blinks
+  const bool blinkOff = (myCellPercent >= 0 && myCellPercent < cLowPercent &&
+                         (millis() / cBlinkPeriod) % 2 == 1);
 
-  canvas().setPenColor(Color::Black);
-  for (int i=1; i<numSeg; i++)
+  canvas().setPenWidth(1);
+  if (blinkOff == false)
   {
-    canvas().drawLine(cPosX+2+i*cSegWidth, cPosY+3, cPosX+2+i*cSegWidth, cPosY-3+cHeight);
+    canvas().setBrushColor(col);
+    canvas().fillRectangle(cPosX+3, cPosY+3, cPosX+numSeg*cSegWidth+1, cPosY-3+cHeight);
+
+    canvas().setPenColor(Color::Black);
+    for (int i=1; i<numSeg; i++)
+    {
+      canvas().drawLine(cPosX+2+i*cSegWidth, cPosY+3, cPosX+2+i*cSegWidth, cPosY-3+cHeight);
+    }
   }
 
   if (myIsCharging == true)
@@ -112,6 +163,28 @@ void BatteryStatus::draw()
     canvas().selectFont(&fabgl::FONT_std_24);
     canvas().drawText(58, 2, "+");
   }
+}
+
+// ----------------------------------------------------------------------------------------
+void BatteryStatus::drawEmpty()
+{
+  canvas().setBrushColor(Color::Black);
+  canvas().clear();
+  drawHeader(30, "Battery empty");
+
+  // A large battery with one red segment
+  const int w  = 90;
+  const int h  = 44;
+  const int x0 = canvas().getWidth()/2 - 50;
+  const int y0 = 90;
+  drawFrame(x0, y0, x0 + w, y0 + h);
+  canvas().setBrushColor(cDefaultCol);
+  canvas().fillRectangle(x0 + w + 3, y0 + h/2 - 8, x0 + w + 9, y0 + h/2 + 8);
+  canvas().setBrushColor(cBattery00_20Col);
+  canvas().fillRectangle(x0 + 5, y0 + 5, x0 + 14, y0 + h - 5);
+
+  drawCenteredText(155, "Please charge");
+  drawCenteredText(185, "or switch off.");
 }
 
 //----------------------------------------------------------------------------------------------
