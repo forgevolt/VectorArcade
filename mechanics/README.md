@@ -24,10 +24,10 @@ printer and nozzle, named in the table.
 
 | Project | Part | Printer, nozzle | Layer | Walls | Infill | Material |
 |---|---|---|---|---|---|---|
-| `LittleGameConsole_Top0.2.3mf` | top shell | H2D, 0.2 mm | 0.10 mm | 4 | 15% | PLA |
-| `LittleGameConsole_Bottom_90Deg.3mf` | bottom shell, standing on edge (90°) | H2D, 0.4 mm | 0.12 mm | 4 | 15% | PETG-CF |
-| `LittleGameConsole_Bottom_30Deg.3mf` | bottom shell, tilted (30°) | H2D, 0.4 mm | 0.16 mm | 2 | 15% | PETG-CF |
-| `Buttons.3mf` | action and control buttons | H2D, 0.4 mm | 0.12 mm | 4 | 50% | ABS |
+| `LittleGameConsole-Top-H2D-PLA-0.2.3mf` | top shell | H2D, 0.2 mm | 0.10 mm | 4 | 15% | PLA |
+| `LittleGameConsole-Bottom90-H2D-PETG-CF.3mf` | bottom shell, standing on edge (90°) | H2D, 0.4 mm | 0.12 mm | 4 | 15% | PETG-CF |
+| `LittleGameConsole-Bottom30-H2D-PETG-CF.3mf` | bottom shell, tilted (30°) | H2D, 0.4 mm | 0.16 mm | 2 | 15% | PETG-CF |
+| `LittleGameConsole-Buttons-H2D-ABS.3mf` | action and control buttons | H2D, 0.4 mm | 0.12 mm | 4 | 50% | ABS |
 
 The two bottom-shell projects are the same part in two print orientations; print one of them.
 
@@ -35,24 +35,24 @@ The two bottom-shell projects are the same part in two print orientations; print
 
 | Project | Part | Printer, nozzle | Layer | Walls | Infill | Material |
 |---|---|---|---|---|---|---|
-| `TinTinRocket-Lower-H2D-ABS-GF.3mf` | lower body | H2D, 0.4 mm | 0.12 mm | 6 | 15% | ABS-GF |
-| `TinTinRocket-Lower-H2D-PLA-GF.3mf` | lower body | H2D, 0.4 mm | 0.12 mm | 6 | 15% | ABS-GF (see below) |
-| `TinTinRocket-Upper-H2D-ABS-GF ABS-Support.3mf` | upper body | H2D, 0.4 mm | 0.12 mm | 6 | 15% | ABS-GF |
-| `TinTinRocket-Upper-H2D-PLA-GF Support.3mf` | upper body | H2D, 0.4 mm | 0.12 mm | 6 | 15% | PLA-GF |
-| `TinTinRocket-Top-H2D-ABS-GF ABS-Support.3mf` | top | H2D, 0.4 mm | 0.08 mm | 6 | 15% | ABS-GF |
-| `TinTinRocket-Top-H2D-PLA-GF Support.3mf` | top | H2D, 0.4 mm | 0.12 mm | 6 | 15% | PLA-GF |
-| `RocketShooterLower.3mf` | lower body | X1 Carbon, 0.2 mm | 0.06 mm | 6 | 15% | PLA |
-| `RocketShooterUpper.3mf` | upper body | X1 Carbon, 0.2 mm | 0.06 mm | 6 | 15% | PLA |
-| `RocketTop.3mf` | top | X1 Carbon, 0.2 mm | 0.06 mm | 6 | 15% | PLA |
-| `Tiles.3mf` | the checker tiles, rows 1 to 5 | X1 Carbon, 0.2 mm | 0.06 mm | 6 | 15% | PLA |
-| `SelectStartBtn.3mf` | Select and Start buttons | X1 Carbon, 0.2 mm | 0.06 mm | 6 | 15% | PLA |
-| `JoyTopCover.3mf` | joystick cap | X1 Carbon, 0.4 mm | 0.2 mm | 2 | 15% | TPU |
-| `Battery.3mf` | battery end pieces, plus and minus | X1 Carbon, 0.2 mm | 0.06 mm | 6 | 15% | PLA |
-| `Stand.3mf` | stand | X1 Carbon, 0.4 mm | 0.12 mm | 3 | 15% | PLA |
+| `TintinRocketShooter-Lower-H2D-ABS-GF.3mf` | lower body | H2D, 0.4 mm | 0.12 mm | 6 | 15% | ABS-GF |
+| `TintinRocketShooter-Upper-H2D-ABS-GF-ABS-Support.3mf` | upper body | H2D, 0.4 mm | 0.12 mm | 6 | 15% | ABS-GF, supports in ABS |
+| `TintinRocketShooter-Upper-H2D-PLA-GF-Support.3mf` | upper body | H2D, 0.4 mm | 0.12 mm | 6 | 15% | PLA-GF, with supports |
+| `TintinRocketShooter-Top-H2D-ABS-GF-ABS-Support.3mf` | top | H2D, 0.4 mm | 0.08 mm | 6 | 15% | ABS-GF, supports in ABS |
+| `TintinRocketShooter-Top-H2D-PLA-GF-Support.3mf` | top | H2D, 0.4 mm | 0.12 mm | 6 | 15% | PLA-GF, with supports |
+| `TintinRocketShooter-Lower-X1-PLA-0.2.3mf` | lower body | X1 Carbon, 0.2 mm | 0.06 mm | 6 | 15% | PLA |
+| `TintinRocketShooter-Upper-X1-PLA-0.2.3mf` | upper body | X1 Carbon, 0.2 mm | 0.06 mm | 6 | 15% | PLA |
+| `TintinRocketShooter-Top-X1-PLA-0.2.3mf` | top | X1 Carbon, 0.2 mm | 0.06 mm | 6 | 15% | PLA |
+| `TintinRocketShooter-Tiles-X1-PLA-0.2.3mf` | the checker tiles, rows 1 to 5 | X1 Carbon, 0.2 mm | 0.06 mm | 6 | 15% | PLA |
+| `TintinRocketShooter-SelectStartBtn-X1-PLA-0.2.3mf` | Select and Start buttons | X1 Carbon, 0.2 mm | 0.06 mm | 6 | 15% | PLA |
+| `TintinRocketShooter-JoyTopCover-X1-TPU.3mf` | joystick cap | X1 Carbon, 0.4 mm | 0.2 mm | 2 | 15% | TPU |
+| `TintinRocketShooter-Battery-X1-PLA-0.2.3mf` | battery end pieces, plus and minus | X1 Carbon, 0.2 mm | 0.06 mm | 6 | 15% | PLA |
+| `TintinRocketShooter-Stand-X1-PLA.3mf` | stand | X1 Carbon, 0.4 mm | 0.12 mm | 3 | 15% | PLA |
 
-The body - lower part, upper part and top - comes in two sets of projects: `TinTinRocket-*`
-for an H2D with a 0.4 mm nozzle, in glass-filled ABS or PLA, and `RocketShooter*` /
-`RocketTop` for an X1 Carbon with a 0.2 mm nozzle, in PLA. Print one set.
+The body - lower part, upper part and top - comes in two sets of projects: `-H2D-` for an
+H2D with a 0.4 mm nozzle, in glass-filled ABS (upper part and top also in glass-filled PLA;
+the lower part has no PLA-GF project), and `-X1-` for an X1 Carbon with a 0.2 mm nozzle, in
+PLA. Print one set.
 
 ## Opening the CAD
 
@@ -71,13 +71,8 @@ specific to one printer and one filament, and the larger ones run to tens of meg
 are here as a reference for anyone with the same machine. On any other printer, the STLs
 plus the tables above carry the same information in a form your own slicer can use.
 
-**This folder still needs a cleanup.** It holds the projects as they were used, and not all
-of them are consistent yet:
-
-- `TinTinRocket-Lower-H2D-PLA-GF.3mf` is currently an exact copy of the ABS-GF project, so
-  it prints in ABS-GF too. A PLA-GF project for the lower body is still to come.
-- The TintinRocketShooter's body is covered twice, by the `TinTinRocket-*` projects for the
-  H2D and the `RocketShooter*` / `RocketTop` projects for the X1 Carbon.
-- Some file names contain spaces, and the names do not follow one pattern.
-
-Until then, check part, printer and filament in Bambu Studio before printing.
+The file names follow one pattern: console, part, printer, material, `-Support` if the
+project prints supports (with their filament in front where it is a separate one, as in
+`-ABS-Support`), and `-0.2` for the 0.2 mm nozzle (no suffix: 0.4 mm). For example
+`TintinRocketShooter-Top-H2D-ABS-GF-ABS-Support.3mf` is the top for an H2D, in ABS-GF with
+supports in ABS, on the 0.4 mm nozzle.
