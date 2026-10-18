@@ -10,6 +10,8 @@ The custom boards of both consoles: everything needed to have them made, and to 
 | `gerber/Gerber_PCB_TintinRocketShooter_2026-09-30.zip` | TintinRocketShooter: the same |
 | `schematic_LittleGameConsole.pdf` | LittleGameConsole: the schematic as a document, readable without EasyEDA (6 sheets) |
 | `schematic_TintinRocketShooter.pdf` | TintinRocketShooter: the same (7 sheets) |
+| `BOM_LittleGameConsole.csv` | LittleGameConsole: bill of materials of the board, exported from EasyEDA, with LCSC part numbers |
+| `BOM_TintinRocketShooter.csv` | TintinRocketShooter: the same |
 
 The EasyEDA projects and the Gerber archives carry their export date in the file name, so a
 later revision can sit beside these rather than silently replacing them.
@@ -32,7 +34,7 @@ From the schematics, the parts worth naming:
 | USB to serial, for flashing and the Serial Monitor | CP2102N | CP2102N |
 | ESD protection of the USB lines | USBLC6-2SC6 | USBLC6-2SC6 |
 | Li-ion charger | MCP73831 | MCP73831 |
-| 3.3 V regulator | LD39200, 2 A LDO (fixed 3.3 V version, see item 14) | NCP167BMX330TBG, LDO |
+| 3.3 V regulator | LD39200PU33R, 2 A LDO, fixed 3.3 V (schematic and BOM: LD39200PUR, see item 14) | NCP167BMX330TBG, LDO |
 | Battery fuel gauge | MAX17048 | MAX17048 |
 | I2S class-D amplifier | MAX98357A | MAX98357A |
 
@@ -41,7 +43,21 @@ in the wiring table of the top-level README, which mirrors each console's `PinMa
 same section names the three pins that need care in a new layout: GPIO 12 (flash voltage),
 GPIO 2 (boot mode) and the input-only GPIO 34 to 39.
 
-The schematic is the authority for what was actually built.
+The schematic is the authority for what was actually built, with one exception: the
+LittleGameConsole's regulator (item 14). The BOM files list every part on the boards; the
+parts that connect to them are below.
+
+### Not on the board
+
+| Part | LittleGameConsole | TintinRocketShooter |
+|---|---|---|
+| Display | ST7789, 320x240, SPI, on the 8-pin 1.0 mm connector CN600 | ST7789, 240x240, SPI, 7-pin 2.54 mm header J700 (no CS pin) |
+| Battery | single-cell LiPo pack with built-in protection, on CN601 (Molex PicoBlade, 2 pins) | 18650 Li-ion cell with built-in protection, wires soldered to the board (see *Known errors*) |
+| Speaker | on the 2-pin 1.0 mm connector CN602 | SMT-1028 transducer on the board (U701); an external speaker can go on the header H500 |
+| On/off switch | on the board (SW600) | slide switch wired to the pads P402 (VIN), P403 (LDO enable) and P404 (GND) |
+| Joystick cap | - | printed, `JoyTopCover` in [`mechanics/`](../mechanics) |
+
+The joystick (FJ08K-S) and the buttons are on the boards and in the BOM files.
 
 ## Known errors on the TintinRocketShooter board
 
@@ -154,10 +170,10 @@ uses the default order would not depend on that.
     only with the console switched on, and with the console off the VBUS divider (R200,
     R201) puts about 3.4 V on a pin of the unpowered chip. Check this against the CP2102N
     datasheet, or use the bus-powered configuration.
-14. **Regulator part number** (LittleGameConsole). "LD39200PUR" names the adjustable
-    LD39200; with its ADJ pin tied to the output that would give about 0.5 V. The board runs
-    at 3.3 V, so a fixed 3.3 V version is fitted - name it in the schematic, so a reorder
-    brings the right part.
+14. **Regulator part number** (LittleGameConsole). The schematic and the BOM name
+    LD39200PUR, the adjustable LD39200; with its ADJ pin tied to the output that would give
+    about 0.5 V. The board carries the fixed 3.3 V version, LD39200PU33R. Name it in the
+    schematic, so the BOM orders the right part.
 15. **Amplifier supply.** The MAX98357A runs from the 3.3 V rail on both boards. It accepts
     2.5 to 5.5 V; fed from VIN it plays louder and keeps its current peaks off the rail of
     the ESP32 and the display.
@@ -175,3 +191,16 @@ uses the default order would not depend on that.
 19. **Speaker output** (TintinRocketShooter). There is no output filter (the
     LittleGameConsole has ferrites and 220 pF), and the on-board transducer is in parallel
     with the external-speaker header. With both fitted, the load must stay at 4 Ω or more.
+20. **Missing part numbers in the BOM.** LittleGameConsole: the LEDs LED400 and LED401, the
+    silicone buttons SW601 to SW603, the joystick FJ08K-S (no supplier), the
+    ESP32-PICO-MINI-02U-N8R2 (no LCSC number) and the ferrites L500, L501 (GZ1608D121TF, no
+    manufacturer). TintinRocketShooter: the antenna U301 (NN02-101, manufacturer "null"),
+    the header J700, the silicone buttons SW700, SW701 and the joystick. Add them in the
+    EasyEDA project.
+21. **Library text in the BOM.** EasyEDA's part library brings `C&amp;K` for C&K, "SMT业务专用"
+    ("for the SMT service") in the ferrite's name and "卧贴" ("horizontal SMD") in the
+    connector part numbers. Clean them in the project, so the export is plain.
+22. **Parts not to be fitted.** The 0 Ω links marked DNP (LittleGameConsole: R304, R500;
+    TintinRocketShooter: R500) are counted in the BOM like any other part, and an assembly
+    service may fit them. Mark them as not populated in EasyEDA, so the export leaves them
+    out - or, for R304, decide item 11 first.
