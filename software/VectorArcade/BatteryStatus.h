@@ -4,7 +4,7 @@
 #include "DisplayObject.h"
 
 // ---- BatteryStatus ---------------------------------------------------------------------
-// Displays an icon with battery status on the screen, and decides when the battery is empty.
+// Displays the battery icon and the charge in percent, and decides when the battery is empty.
 
 class BatteryStatus : public DisplayObject
 {

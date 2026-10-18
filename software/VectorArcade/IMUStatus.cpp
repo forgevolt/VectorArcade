@@ -12,7 +12,7 @@ namespace
 
 const int   cRadius     = 12;    // Radius of the circle 
 const float cAngleLimit = 45;    // Visualize in [-cAngleLimit, cAngleLimit]
-const int   cPosXTemp   = 90;    // Position of the temperature
+const int   cPosXTemp   = 100;   // Position of the temperature, right of the battery charge
 const int   cPosYTemp   = 3;
 const int   cPosXIMU    = 210;   // Position of the IMU information
 const int   cPosYIMU    = 17;

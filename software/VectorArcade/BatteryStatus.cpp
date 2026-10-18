@@ -27,6 +27,11 @@ const float         cEmptyVoltage    = 3.20f;  // V, safety net
 const unsigned long cEmptyDuration   = 60000;  // ms the condition must hold
 const float         cRechargedPercent = 2.0f;  // leaves the "empty" screen
 const unsigned long cBlinkPeriod     = 500;    // ms on, ms off
+const unsigned long cChargeStep      = 500;    // ms per segment of the charging animation
+
+// Charge in percent, right of the battery terminal
+const int cPercentPosX = cPosX + cWidth + cTermWidth + 9;
+const int cPercentPosY = cPosY + cHeight/2 - 7;
 
 } // namespace
 
@@ -140,8 +145,18 @@ void BatteryStatus::draw()
 
   // ---- Visualize charge percentage
 
-  // Below cLowPercent the last segment blinks
-  const bool blinkOff = (myCellPercent >= 0 && myCellPercent < cLowPercent &&
+  // While charging, the segments turn green and fill up one by one to full, starting again
+  // from the present level (from the fourth segment when it is full already)
+  if (myIsCharging == true)
+  {
+    col = cBattery80_100Col;
+    const int first = min(numSeg, 4);
+    numSeg = first + (millis() / cChargeStep) % (6 - first);
+  }
+
+  // Below cLowPercent the last segment blinks, unless charging
+  const bool blinkOff = (myIsCharging == false &&
+                         myCellPercent >= 0 && myCellPercent < cLowPercent &&
                          (millis() / cBlinkPeriod) % 2 == 1);
 
   canvas().setPenWidth(1);
@@ -157,11 +172,14 @@ void BatteryStatus::draw()
     }
   }
 
-  if (myIsCharging == true)
+  // ---- Charge in percent, rounded down: 100 % only when the gauge reads full
+
+  if (myCellPercent >= 0)
   {
+    const int percent = constrain((int)myCellPercent, 0, 100);
     canvas().setPenColor(cDefaultCol);
-    canvas().selectFont(&fabgl::FONT_std_24);
-    canvas().drawText(58, 2, "+");
+    canvas().selectFont(&fabgl::FONT_std_16);
+    canvas().drawTextFmt(cPercentPosX, cPercentPosY, "%d%%", percent);
   }
 }
 
