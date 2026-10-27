@@ -132,7 +132,10 @@ uses the default order would not depend on that.
    pin (two 100 kΩ bias resistors, 75 kΩ in series, 100 nF). It was dropped: a charge LED
    on STAT shifts the middle level into the "complete" range, and a missing battery makes
    STAT toggle rather than float. The TintinRocketShooter already brings STAT to GPIO 25
-   through a 10 kΩ / 20 kΩ divider, which keeps "high" at 3.3 V.
+   through a 10 kΩ / 20 kΩ divider, which keeps "high" at 3.3 V. Schematic:
+   [`STAT_LevelShifter.svg`](STAT_LevelShifter.svg).
+
+![STAT level shifter and charge LED](STAT_LevelShifter.svg)
 
 ### Larger changes
 
