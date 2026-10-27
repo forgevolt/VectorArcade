@@ -112,22 +112,27 @@ uses the default order would not depend on that.
 6. **Charge sense for the LittleGameConsole.** The TintinRocketShooter shows a "+" at the
    battery while charging, from two signals: USB present, and the charger's STAT output.
    The LittleGameConsole has neither - its GPIO 25 and 26 are buttons. A revision needs two
-   free pins, the analog one on ADC1 (GPIO 32 to 39). The firmware is ready: add the pins to
+   free input pins (item 7 for STAT). The firmware is ready: add the pins to
    `PinMap.h` and set `BOARD_HAS_CHARGE_SENSE()` to 1 in `Board.h`. A firmware-only
    alternative was tested and dropped: the MAX17048 sees plugging in as a voltage step, but
    near full charge the step is too small to tell from the TintinRocketShooter's normal
    voltage swings. Item 12 shows where the LittleGameConsole's USB-present signal already is.
-7. **Read all three states of STAT.** The MCP73831's STAT output is low while charging, high
-   when charging is complete, and high-impedance with no input power or no battery. A
-   digital input cannot tell high-impedance from high. Bias the sense node with two
-   100 kΩ resistors to 3.3 V and ground, feed STAT through a **75 kΩ series resistor**, and
-   add 100 nF to ground; one ADC reading then gives about 0.99 V (charging), 1.65 V
-   (high-impedance) or 3.0 V (complete). The series resistor matters: the charger runs
-   from USB, so STAT high is about 5 V, beyond the ESP32's 3.6 V maximum. Schematic:
-   [`STAT_TriState.svg`](STAT_TriState.svg). The TintinRocketShooter already brings STAT to
-   GPIO 25 through a 10 kΩ / 20 kΩ divider, which keeps "high" at 3.3 V.
-
-![STAT three-state sense](STAT_TriState.svg)
+7. **Read STAT through a level shifter.** The MCP73831's STAT output is low while charging,
+   high when charging is complete, and high-impedance with no input power or no battery.
+   The charger runs from USB, so STAT high is about 5 V, beyond the ESP32's 3.6 V maximum:
+   STAT must not reach a GPIO directly. A P-MOSFET (Si2301) converts it: source to VBUS,
+   gate held at VBUS by 100 kΩ and pulled towards STAT by 10 kΩ. While STAT is low the
+   MOSFET conducts, and a **150 kΩ / 220 kΩ divider** on its drain gives about 3 V at a
+   digital input - high = charging, low = complete, high-impedance or no USB. The divider is
+   large because the console's 3.3 V is off while the cell charges; small values would feed
+   current into the unpowered chip. A charge LED from VBUS through 1 kΩ to STAT lights while
+   charging, without the ESP32. With no battery the charger cycles between charging and
+   complete every few tens of milliseconds, so the input toggles; the firmware counts the
+   edges to report "no battery". An earlier proposal read STAT as three states on an ADC
+   pin (two 100 kΩ bias resistors, 75 kΩ in series, 100 nF). It was dropped: a charge LED
+   on STAT shifts the middle level into the "complete" range, and a missing battery makes
+   STAT toggle rather than float. The TintinRocketShooter already brings STAT to GPIO 25
+   through a 10 kΩ / 20 kΩ divider, which keeps "high" at 3.3 V.
 
 ### Larger changes
 
@@ -142,8 +147,8 @@ uses the default order would not depend on that.
    about 2.5 V, noisy, and not ratiometric to the potentiometers' supply; the firmware
    compensates with calibration, averaging and an expo curve. An **MCP3208** (or the
    4-channel MCP3204) on its own SPI pins, with `VREF` tied to the potentiometer supply,
-   gives 12 linear, ratiometric bits in microseconds, plus spare channels for the battery
-   or the STAT node. An **ADS1115** needs no new pins - it joins the I2C bus at 0x48 to
+   gives 12 linear, ratiometric bits in microseconds, plus spare channels, e.g. for the
+   battery voltage. An **ADS1115** needs no new pins - it joins the I2C bus at 0x48 to
    0x4B - but converts at most about 400 times a second per axis and adds traffic to the
    bus the IMU is read on. On an ESP32-S3, measure the built-in ADC first. **Hall-effect
    joysticks** fix the other half of the problem - wear, drift and dead spots of the
