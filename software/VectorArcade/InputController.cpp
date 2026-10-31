@@ -39,10 +39,10 @@ void InputController::begin()
   myBtnB.setPressedState(LOW);
   myBtnB.interval(5);
 
-#if BOARD_HAS_AUX_BUTTON()
-  myBtnAux.attach(cPinBtnAux, INPUT_PULLUP);
-  myBtnAux.setPressedState(LOW);
-  myBtnAux.interval(5);
+#if BOARD_HAS_X_BUTTON()
+  myBtnX.attach(cPinBtnX, INPUT_PULLUP);
+  myBtnX.setPressedState(LOW);
+  myBtnX.interval(5);
 #endif
 
   myBtnSel.attach(cPinBtnSel, INPUT_PULLUP);
@@ -88,7 +88,7 @@ InputController::State InputController::getState()
   ret.y     = myJoy.getY();
 
   // reset button change state
-  myState.a = myState.b = myState.aux = myState.sel = myState.start = myState.joy = false;
+  myState.a = myState.b = myState.btnX = myState.sel = myState.start = myState.joy = false;
 
   xSemaphoreGive(myMutex);
 
@@ -122,13 +122,13 @@ void InputController::processEvents(void* pvParameters)
       }
       c->myState.bIsPressed = c->myBtnB.isPressed();
 
-#if BOARD_HAS_AUX_BUTTON()
-      c->myBtnAux.update();
-      if (c->myBtnAux.pressed())
+#if BOARD_HAS_X_BUTTON()
+      c->myBtnX.update();
+      if (c->myBtnX.pressed())
       {
-        c->myState.aux = true;
+        c->myState.btnX = true;
       }
-      c->myState.auxIsPressed = c->myBtnAux.isPressed();
+      c->myState.btnXIsPressed = c->myBtnX.isPressed();
 #endif
 
       c->myBtnSel.update();

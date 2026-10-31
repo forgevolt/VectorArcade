@@ -506,9 +506,9 @@ void Asteroids::stepRunning(unsigned long dt)
     }
   }
 
-  // ---- Activate hyperspace (Aux button, Start on boards without Aux)
+  // ---- Activate hyperspace (X button, Start on boards without X)
 
-  if ((BOARD_HAS_AUX_BUTTON() ? myInput.aux : myInput.start) == true)
+  if ((BOARD_HAS_X_BUTTON() ? myInput.btnX : myInput.start) == true)
   {
     myShip.hyperspace();
   }
@@ -629,7 +629,7 @@ void Asteroids::stepGotHit(unsigned long dt)
 void Asteroids::stepGameOver(unsigned long dt)
 {
   // Any key or 20sec -> switch to splash screen
-  if ((myInput.a == true || myInput.b == true || myInput.aux || myInput.start || millis() - myStartWaitTime > 20000) && (millis() - myStartWaitTime > cWaitTime))
+  if ((myInput.a == true || myInput.b == true || myInput.btnX || myInput.start || millis() - myStartWaitTime > 20000) && (millis() - myStartWaitTime > cWaitTime))
   {
     prepareSplashScreen();
   }
@@ -648,7 +648,7 @@ void Asteroids::drawSplashScreen()
     drawHeader(10, myMenuName);
     drawCenteredText(55, "Press 'Start' to play");
 
-    drawInstructions("Quit Game", BOARD_HAS_AUX_BUTTON() ? "Start" : "Hyperspace", "Fire", "Thrust", "Hyperspace", &fabgl::FONT_std_16);
+    drawInstructions("Quit Game", BOARD_HAS_X_BUTTON() ? "Start" : "Hyperspace", "Fire", "Thrust", "Hyperspace", &fabgl::FONT_std_16);
   }
   else
   {

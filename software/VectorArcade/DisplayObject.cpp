@@ -74,7 +74,7 @@ void DisplayObject::drawInstructions(const String& sel, const String& start,
 
   myCanvas.setPenWidth(1);
 
-#if BOARD_HAS_AUX_BUTTON()
+#if BOARD_HAS_X_BUTTON()
   // Sel
   myCanvas.setBrushColor(cShadowCol);
   myCanvas.fillEllipse(35+2, 121+2, 25, 15);

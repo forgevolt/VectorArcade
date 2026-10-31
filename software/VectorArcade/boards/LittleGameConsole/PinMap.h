@@ -36,7 +36,7 @@ constexpr int cI2S_LRC   = 19;  // Left/Right clock, also known as Frame clock o
 // Buttons
 constexpr int cPinBtnA     = 26;
 constexpr int cPinBtnB     = 25;
-constexpr int cPinBtnAux   = 4;
+constexpr int cPinBtnX     = 4;
 constexpr int cPinBtnSel   = 7;
 constexpr int cPinBtnStart = 20;
 

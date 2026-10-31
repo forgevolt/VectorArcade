@@ -385,9 +385,9 @@ void LunarLander::stepRunning(unsigned long dt)
     myEagle.setFuel(myEagle.getFuel() - 0.45f); // Each rotation reduces fuel by 0.45l
   }  
 
-  // ---- Abort landing? (Aux button, Start on boards without Aux)
+  // ---- Abort landing? (X button, Start on boards without X)
 
-  if ((BOARD_HAS_AUX_BUTTON() ? myInput.aux : myInput.start) == true)
+  if ((BOARD_HAS_X_BUTTON() ? myInput.btnX : myInput.start) == true)
   {
     myEagle.abort();
   }
@@ -575,7 +575,7 @@ void LunarLander::stepGameOver(unsigned long dt)
 {
   // ---- Check buttons
 
-  if (myInput.a == true || myInput.b == true || myInput.aux == true || myInput.start)
+  if (myInput.a == true || myInput.b == true || myInput.btnX == true || myInput.start)
   {
     sound().play(sound().click());
     prepareStartGame();
@@ -797,7 +797,7 @@ void LunarLander::drawGameOver()
     drawHeader(10, myMenuName);
     drawCenteredText(55, "Press a button to start");
 
-    drawInstructions("Quit Game", BOARD_HAS_AUX_BUTTON() ? "Start" : "Abort Landing", "Rotate Left", "Rotate Right", "Abort Landing", &fabgl::FONT_std_16);
+    drawInstructions("Quit Game", BOARD_HAS_X_BUTTON() ? "Start" : "Abort Landing", "Rotate Left", "Rotate Right", "Abort Landing", &fabgl::FONT_std_16);
   }
   else 
   {

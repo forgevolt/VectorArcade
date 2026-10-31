@@ -25,10 +25,10 @@ class InputController
     struct State 
     {
       // true if the button was physically pressed (change from released to pressed)      
-      bool a, b, aux, sel, start, joy;
+      bool a, b, btnX, sel, start, joy;
 
       // true if the button is currently physically pressed
-      bool aIsPressed, bIsPressed, auxIsPressed, selIsPressed, startIsPressed, joyIsPressed;             
+      bool aIsPressed, bIsPressed, btnXIsPressed, selIsPressed, startIsPressed, joyIsPressed;
 
       bool up, down, left, right;  // true == joystick moved in that direction
       int x, y;                    // joystick position
@@ -48,10 +48,10 @@ class InputController
     joystickutilities::Joystick<2>& joy() { return myJoy; }
 
   private:
-    // The buttons (Aux only on boards that have it)
+    // The buttons (X only on boards that have it)
     Bounce2::Button myBtnA, myBtnB, myBtnSel, myBtnStart; 
-#if BOARD_HAS_AUX_BUTTON()
-    Bounce2::Button myBtnAux;
+#if BOARD_HAS_X_BUTTON()
+    Bounce2::Button myBtnX;
 #endif
 
     // The joystick with a single button

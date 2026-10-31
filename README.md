@@ -43,12 +43,12 @@ housing is modelled on the moon rocket from the Tintin comics.
 | Joystick | up/down: choose | up: engine thrust | left/right: rotate |
 | A | open | rotate left | fire |
 | B | - | rotate right | thrust |
-| Aux | - | abort landing | hyperspace |
+| X | - | abort landing | hyperspace |
 | Start | open | start a game | start a game |
 | Sel | back | quit the game | quit the game |
 | Joystick button | open | - | - |
 
-The TintinRocketShooter has no Aux button: **Start** takes its place during a game (abort
+The TintinRocketShooter has no X button: **Start** takes its place during a game (abort
 landing, hyperspace). Before a Lunar Lander game, **A** adds fuel and **Start** begins; on the
 TintinRocketShooter, left/right first chooses between the joystick and tilting the console
 ("Gyro") as the throttle.
@@ -59,7 +59,7 @@ TintinRocketShooter, left/right first chooses between the joystick and tilting t
 | --- | --- | --- |
 | Controller | ESP32-PICO-MINI-02U, 8 MB flash, 2 MB PSRAM | ESP32-PICO-V3-02, 8 MB flash, 2 MB PSRAM |
 | Display | ST7789 320x240, SPI, switched backlight | ST7789 240x240, SPI |
-| Buttons | A, B, Aux, Sel, Start, joystick button | A, B, Sel, Start, joystick button |
+| Buttons | A, B, X, Sel, Start, joystick button | A, B, Sel, Start, joystick button |
 | Joystick | 2-axis analog | 2-axis analog |
 | IMU | - | MPU6050, I2C |
 | Fuel gauge | MAX17048, I2C | MAX17048, I2C |
@@ -85,7 +85,7 @@ GPIO; this table mirrors both.
 | I2S (audio) | LRC / word select | 19 | 19 |
 | Button | A | 26 | 4 |
 | Button | B | 25 | 7 |
-| Button | Aux | 4 | - |
+| Button | X | 4 | - |
 | Button | Sel | 7 | 36 |
 | Button | Start | 20 | 20 |
 | Joystick | button | 33 | 38 |

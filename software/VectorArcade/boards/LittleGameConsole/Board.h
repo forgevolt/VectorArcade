@@ -21,6 +21,6 @@
 
 // ---- Features
 #define BOARD_HAS_BACKLIGHT()    1   // cTFT_BL
-#define BOARD_HAS_AUX_BUTTON()   1   // cPinBtnAux
+#define BOARD_HAS_X_BUTTON()     1   // cPinBtnX
 #define BOARD_HAS_IMU()          0
 #define BOARD_HAS_CHARGE_SENSE() 0   // cUSBStatus, cChargeStat
